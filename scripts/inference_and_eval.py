@@ -100,7 +100,7 @@ def generate_embedding_plot(args, image_features, dna_features, language_feature
             return None, None, None
         return np.unique(language_features, axis=0, return_index=True, return_inverse=True)
 
-    levels = ["order", "family",  "genus", "species"]
+    levels = ["order", "family", "genus", "species"]
 
     unique_lang_features, lang_indices, inv_indices = get_language_feature_mapping(language_features)
     # compute 2D embeddings
@@ -194,25 +194,28 @@ def generate_embedding_plot(args, image_features, dna_features, language_feature
                 xanchor="center",
                 x=0.5,
                 title="",
-                itemsizing='constant',
-                traceorder='normal',
+                itemsizing="constant",
+                traceorder="normal",
                 itemwidth=30,
                 tracegroupgap=5,
-
             ),
-            margin=dict(l=0, r=0, t=0, b=0)
+            margin=dict(l=0, r=0, t=0, b=0),
         )
 
         folder_path = os.path.join(args.project_root_path, f"{PLOT_FOLDER}/{args.model_config.model_output_name}")
         os.makedirs(folder_path, exist_ok=True)
         # fig_3d.update_traces(marker_size=5)
         fig_2d.write_html(os.path.join(folder_path, f"{level}_2d.html"))
-        plotly.io.write_image(fig_2d, os.path.join(folder_path, f"{level}_2d.pdf"), format="pdf", height=3200, width=3200)
+        plotly.io.write_image(
+            fig_2d, os.path.join(folder_path, f"{level}_2d.pdf"), format="pdf", height=3200, width=3200
+        )
         # plotly.io.write_image(fig_2d, os.path.join(folder_path, f"{level}_2d.pdf"), format="pdf", height=1200, width=1600)
         print(f"Saved {level} plot in {os.path.join(folder_path, f'{level}_2d.html')}")
         # fig_3d.write_html(os.path.join(folder_path, f'{level}_3d.html'))
         # fig_2d.show()
-        plotly.io.write_image(fig_2d, os.path.join(folder_path, f"{level}_2d.pdf"), format="pdf", height=3200, width=3200)
+        plotly.io.write_image(
+            fig_2d, os.path.join(folder_path, f"{level}_2d.pdf"), format="pdf", height=3200, width=3200
+        )
         # fig_3d.show()
 
 
@@ -230,6 +233,7 @@ def retrieve_images(
     independent=True,
     seed=None,
     load_cached_results=False,
+    is_bioscan5m: bool = False,
 ):
     """
     for X in {image, DNA}:
@@ -298,8 +302,16 @@ def retrieve_images(
         loaded_cached_results = False
 
     # use these to reverse lookup the indices for each image file later
-    query_image_file_map = {filename.decode("utf-8"): j for j, filename in enumerate(query_data["image_file"])}
-    key_image_file_map = {filename.decode("utf-8"): j for j, filename in enumerate(key_data["image_file"])}
+    if is_bioscan5m:
+        query_image_file_map = {
+            filename.decode("utf-8").partition(".")[0]: j for j, filename in enumerate(query_data["image_file"])
+        }
+        key_image_file_map = {
+            filename.decode("utf-8").partition(".")[0]: j for j, filename in enumerate(key_data["image_file"])
+        }
+    else:
+        query_image_file_map = {filename.decode("utf-8"): j for j, filename in enumerate(query_data["image_file"])}
+        key_image_file_map = {filename.decode("utf-8"): j for j, filename in enumerate(key_data["image_file"])}
 
     # making one large file: create figure upfront and add the query images to start in the first column
     if not independent:
@@ -735,37 +747,45 @@ def main(args: DictConfig) -> None:
             seen_dict.get("encoded_language_feature"),
             seen_dict["label_list"],
         )
-    #
-    # if args.inference_and_eval_setting.retrieve_images:
-    #     image_data = h5py.File(args.bioscan_data.path_to_hdf5_data, "r")
-    #     retrieve_images(
-    #         args,
-    #         f"{args.inference_and_eval_setting.eval_on}_seen",
-    #         seen_dict,
-    #         keys_dict,
-    #         query_keys=[
-    #             ("encoded_dna_feature", "encoded_dna_feature"),
-    #             ("encoded_image_feature", "encoded_image_feature"),
-    #             ("encoded_image_feature", "encoded_dna_feature"),
-    #         ],
-    #         query_data=image_data["val_seen"],
-    #         key_data=image_data["all_keys"],
-    #         **args.inference_and_eval_setting.retrieve_settings,
-    #     )
-    #     retrieve_images(
-    #         args,
-    #         f"{args.inference_and_eval_setting.eval_on}_unseen",
-    #         unseen_dict,
-    #         keys_dict,
-    #         query_keys=[
-    #             ("encoded_dna_feature", "encoded_dna_feature"),
-    #             ("encoded_image_feature", "encoded_image_feature"),
-    #             ("encoded_image_feature", "encoded_dna_feature"),
-    #         ],
-    #         query_data=image_data["val_unseen"],
-    #         key_data=image_data["all_keys"],
-    #         **args.inference_and_eval_setting.retrieve_settings,
-    #     )
+
+    if args.inference_and_eval_setting.retrieve_images:
+        if args.model_config.dataset == "bioscan_5m":
+            if hasattr(args.model_config, "train_with_small_subset") and args.model_config.train_with_small_subset:
+                image_data = h5py.File(args.bioscan_5m_data.path_to_smaller_hdf5_data, "r", libver="latest")
+            else:
+                image_data = h5py.File(args.bioscan_5m_data.path_to_hdf5_data, "r", libver="latest")
+        else:
+            image_data = h5py.File(args.bioscan_data.path_to_hdf5_data, "r")
+        retrieve_images(
+            args,
+            f"{args.inference_and_eval_setting.eval_on}_seen",
+            seen_dict,
+            keys_dict,
+            query_keys=[
+                ("encoded_dna_feature", "encoded_dna_feature"),
+                ("encoded_image_feature", "encoded_image_feature"),
+                ("encoded_image_feature", "encoded_dna_feature"),
+            ],
+            query_data=image_data[f"{args.inference_and_eval_setting.eval_on}_seen"],
+            key_data=image_data["all_keys"],
+            is_bioscan5m=(args.model_config.dataset == "bioscan_5m"),
+            **args.inference_and_eval_setting.retrieve_settings,
+        )
+        retrieve_images(
+            args,
+            f"{args.inference_and_eval_setting.eval_on}_unseen",
+            unseen_dict,
+            keys_dict,
+            query_keys=[
+                ("encoded_dna_feature", "encoded_dna_feature"),
+                ("encoded_image_feature", "encoded_image_feature"),
+                ("encoded_image_feature", "encoded_dna_feature"),
+            ],
+            query_data=image_data[f"{args.inference_and_eval_setting.eval_on}_unseen"],
+            key_data=image_data["all_keys"],
+            is_bioscan5m=(args.model_config.dataset == "bioscan_5m"),
+            **args.inference_and_eval_setting.retrieve_settings,
+        )
 
 
 if __name__ == "__main__":
