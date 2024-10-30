@@ -87,7 +87,7 @@ def get_result(csv, header, corr, alignment_type, macro=False):
     return seen, unseen, harmonic
 
 
-def get_results(folder_list, header, corr, macro=False, last=False):
+def get_results(folder_list, header, corr, results, macro=False, last=False):
     seen_list = []; unseen_list = []; harmonic_list = []
     return_string = ""
 
@@ -100,6 +100,14 @@ def get_results(folder_list, header, corr, macro=False, last=False):
         seen, unseen, harmonic = get_result(readCSV, header, corr, alignment_type, macro=macro)
         seen_list.append(seen); unseen_list.append(unseen); harmonic_list.append(harmonic)
 
+    macro_str = "macro" if macro else "micro"
+    if macro_str not in results:
+        results[macro_str] = {}
+    if corr not in results[macro_str]:
+        results[macro_str][corr] = {}
+    if header not in results[macro_str][corr]:
+        results[macro_str][corr][header] = {}
+    idx2id = {0: 'seen', 1: 'unseen', 2: 'harmonic'}; 
     for num_idx, num_list in enumerate([seen_list, unseen_list, harmonic_list]):
         if -1 in num_list:
             return_string += "--- "
@@ -113,6 +121,8 @@ def get_results(folder_list, header, corr, macro=False, last=False):
 
             mean = np.mean(comput_list)
             std = np.std(comput_list)
+
+            results[macro_str][corr][header][idx2id[num_idx]] = {"mean": mean, "std": std}
 
             return_string += f"{mean:.2f} $\pm$ {std:.2f} "
 
@@ -146,7 +156,7 @@ def writw_latex_table_footer():
     return latex_strings
 
 
-def write_latex_content(args, dataset=True, alignment=True):
+def write_latex_content(args, results, dataset=True, alignment=True):
     latex_strings = ""
 
     if args.full_table:
@@ -215,7 +225,10 @@ def write_latex_content(args, dataset=True, alignment=True):
     # write the content
     latex_strings += "\\midrule\n"
 
-    for header in ["Order", "Family", "Genus", "Species"]:
+    for header_idx, header in enumerate(["Order", "Family", "Genus", "Species"]):
+
+        if header_idx != 0:
+            latex_strings += "& "        
 
         latex_strings += f"{header} & "
 
@@ -231,13 +244,13 @@ def write_latex_content(args, dataset=True, alignment=True):
             for macro in [False, True]:
                 for corr in ["dna2dna", "img2img", "img2dna"]:
                     latex_strings += get_results(
-                        args.result_folder, header, corr, macro=macro, 
+                        args.result_folder, header, corr, results, macro=macro, 
                         last=True if corr == "img2dna" and macro is True else False)
         else:
             macro = False if args.metric == "micro" else True
             for corr in ["dna2dna", "img2img", "img2dna"]:
                 latex_strings += get_results(
-                    args.result_folder, header, corr, macro=macro, 
+                    args.result_folder, header, corr, results, macro=macro, 
                     last=True if corr == "img2dna" else False)
 
         latex_strings += "" if header != "Species" else "\\bottomrule\n"
@@ -252,8 +265,27 @@ def write_latex_content(args, dataset=True, alignment=True):
 
 
 def main(args):
-    latex = write_latex_content(args, dataset=not args.no_dataset, alignment=not args.no_alignment)
+    results = {}
+    latex = write_latex_content(args, results, dataset=not args.no_dataset, alignment=not args.no_alignment)
     print(latex)
+
+    if args.metric == "both":
+        metric_lst = ["micro", "macro"]
+    else:
+        metric_lst = [args.metric]
+    
+    accuracy_lst = []; variance_lst = []
+    for metric in metric_lst:
+        print(f"Metric: {metric}")
+
+        for corr in ["dna2dna", "img2img", "img2dna"]:
+            for cls in ['seen', 'unseen', 'harmonic']:
+                for header in ["Order", "Family", "Genus", "Species"]:
+                    accuracy_lst.append(results[metric][corr][header][cls]["mean"])
+                    variance_lst.append(results[metric][corr][header][cls]["std"])
+
+        print(accuracy_lst, sep=', ')
+        print(variance_lst, sep=', ')
 
 
 if __name__ == "__main__":
@@ -262,7 +294,9 @@ if __name__ == "__main__":
                         default=[
                             "outputs/2024-09-15/17-23-29",
                             "outputs/2024-09-18/16-25-48",
-                            "outputs/2024-09-19/16-10-43",
+                            # "outputs/2024-09-19/16-10-43",
+                            "outputs/2024-10-25/10-15-28",
+                            "outputs/2024-10-27/16-44-54",
                             ])
     # parser.add_argument("--result_folder", type=str, nargs='+')
     parser.add_argument("--full_table", action="store_true",

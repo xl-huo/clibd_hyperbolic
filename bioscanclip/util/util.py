@@ -675,6 +675,7 @@ def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, small_sp
             #     curr_unseen_feature, curr_keys_feature, keys_label, max_k=max_k
             # )
 
+            print(key_feature_type)
             curr_seen_pred_lists = make_prediction(
                 curr_seen_feature, curr_keys_feature, keys_label, with_similarity=False, max_k=max_k, with_indices=True, keys_id=keys_id
             )
