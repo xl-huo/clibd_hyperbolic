@@ -63,6 +63,10 @@ def main(args: DictConfig) -> None:
         unique_dna_bin_from_pre_train = set(dna_bin_from_pre_train)
         print("The number of unique dna_bin in pre-train: ", len(unique_dna_bin_from_pre_train))
 
+        species_from_pre_train = [item.decode("utf-8") for item in pre_train_group['species'][:]]
+        unique_species_from_pre_train = set(species_from_pre_train)
+        print("The number of unique species in pre-train: ", len(unique_species_from_pre_train))
+
 
     print("For BIOSCAN-5M")
     with h5py.File(path_to_5m, "r") as f:
@@ -76,6 +80,9 @@ def main(args: DictConfig) -> None:
         dna_bin_from_pre_train = [sample_id_to_dna_bin[sample_id] for sample_id in sample_id_from_pre_train]
         unique_dna_bin_from_pre_train = set(dna_bin_from_pre_train)
         print("The number of unique dna_bin in pre-train: ", len(unique_dna_bin_from_pre_train))
+        species_from_pre_train = [item.decode("utf-8") for item in pre_train_group['species'][:]]
+        unique_species_from_pre_train = set(species_from_pre_train)
+        print("The number of unique species in pre-train: ", len(unique_species_from_pre_train))
 
 
 
