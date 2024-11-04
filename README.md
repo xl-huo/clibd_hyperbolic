@@ -1,6 +1,6 @@
 # BIOSCAN-CLIP
 This is the official implementation for "BIOSCAN-CLIP: Bridging Vision and Genomics for Biodiversity Monitoring at Scale".
-Links: [website](https://3dlg-hcvc.github.io/bioscan-clip/) | [paper](https://arxiv.org/abs/2405.17537)
+Links: [website](https://bioscan-ml.github.io/bioscan-clip/) | [paper](https://arxiv.org/abs/2405.17537)
 
 # Overview
 ![Teaser](./docs/static/images/method.png)
@@ -10,14 +10,14 @@ We introduce BIOSCAN-CLIP, a model uses contrastive learning to map biological i
 The aligned image-DNA embedding space improves taxonomic classification using images and allows us to do cross-modal retrieval from image to DNA. We train BIOSCAN-CLIP on the [BIOSCAN-1M](https://biodiversitygenomics.net/projects/1m-insects/) and [BIOSCAN-5M](https://biodiversitygenomics.net/projects/5m-insects/) insect datasets.  These datasets provides paired images of insects and their DNA barcodes, along with their taxonomic labels.  
 
 # Setup environment
-BIOSCAN-CLIP was developed using Python 3.10 and PyTorch 2.0.1.  We recommend the use of GPU and CUDA for efficient training and inference.  Our models were developed with CUDA 12.4.  
+BIOSCAN-CLIP was developed using Python 3.10 and PyTorch 2.0.1.  We recommend the use of GPU and CUDA for efficient training and inference.  Our models were developed with CUDA 11.7 and 12.4.  
 We also recommend the use of [miniconda](https://docs.anaconda.com/miniconda/miniconda-install/) for managing your environments. 
 
 To setup the environment width necessary dependencies, type the following commands:
 ```shell
-conda create -n bioscan-clip python=3.10
+conda create -n bioscan-clip python=3.10 -y
 conda activate bioscan-clip
-conda install pytorch=2.0.1 torchvision=0.15.2 torchtext=0.15.2 pytorch-cuda=11.7 -c pytorch -c nvidia
+conda install pytorch=2.0.1 torchvision=0.15.2 torchtext=0.15.2 pytorch-cuda=11.7 -c pytorch -c nvidia -y
 pip install -r requirements.txt
 pip install -e .
 pip install git+https://github.com/Baijiong-Lin/LoRA-Torch
@@ -33,12 +33,12 @@ We provide pretrained embeddings and model weights.  We evaluate our models by e
 
 | Training data |  Aligned modalities |  Embeddings |  Model  | Config |
 |---------------|---------------------|-------------|---------|--------|
-| BIOSCAN-1M    |  None               |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_1m/no_align_1m/extracted_features.zip) |  N/A   |  [Link](/localhome/zmgong/Desktop/projects/bioscan/www/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl_no_loading.yaml)  |
-| BIOSCAN-1M    |  **I**mage + **D**NA        |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_1m/trained_with_bioscan_1m_image_dna/extracted_features.zip)|  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan//BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_1m/image_dna.pth)   |  [Link](/localhome/zmgong/Desktop/projects/bioscan/www/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_1m/lora_vit_lora_barcode_bert_ssl.yaml)  |
-| BIOSCAN-1M    |  **I**mage + **D**NA + **T**ax  |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_1m/trained_with_bioscan_1m_image_dna_text/extracted_features.zip)       |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_1m/image_dna_text.pth) |  [Link](/localhome/zmgong/Desktop/projects/bioscan/www/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl.yaml) |
-| BIOSCAN-5M    |  None               |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/no_align_5m/extracted_features.zip)       |  N/A   |  [Link](/localhome/zmgong/Desktop/projects/bioscan/www/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_5m_no_loading.yaml)  |
-| BIOSCAN-5M    |  **I**mage + **D**NA        |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/trained_with_bioscan_5m_image_dna/extracted_features.zip)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_5m/image_dna.pth)    |  [Link](/localhome/zmgong/Desktop/projects/bioscan/www/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_5m/lora_vit_lora_barcode_bert_5m.yaml)  |
-| BIOSCAN-5M    |  **I**mage + **D**NA + **T**ax  |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/trained_with_bioscan_5m_image_dna_text/extracted_features.zip)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_5m/image_dna_text.pth)|   [Link](/localhome/zmgong/Desktop/projects/bioscan/www/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_5m.yaml)  |
+| BIOSCAN-1M    |  None               |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_1m/no_align_1m/extracted_features.zip) |  N/A   |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl_no_loading.yaml)  |
+| BIOSCAN-1M    |  **I**mage + **D**NA        |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_1m/trained_with_bioscan_1m_image_dna/extracted_features.zip)|  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan//BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_1m/image_dna.pth)   |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_1m/lora_vit_lora_barcode_bert_ssl.yaml)  |
+| BIOSCAN-1M    |  **I**mage + **D**NA + **T**ax  |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_1m/trained_with_bioscan_1m_image_dna_text/extracted_features.zip)       |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_1m/image_dna_text.pth) |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl.yaml) |
+| BIOSCAN-5M    |  None               |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/no_align_5m/extracted_features.zip)       |  N/A   |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_5m_no_loading.yaml)  |
+| BIOSCAN-5M    |  **I**mage + **D**NA        |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/trained_with_bioscan_5m_image_dna/extracted_features.zip)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_5m/image_dna.pth)    |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_5m/lora_vit_lora_barcode_bert_5m.yaml)  |
+| BIOSCAN-5M    |  **I**mage + **D**NA + **T**ax  |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/trained_with_bioscan_5m_image_dna_text/extracted_features.zip)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_5m/image_dna_text.pth)|   [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloadingconfig_files/for_bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_5m.yaml)  |
 
 ## Quick start
 Instead of conducting a full training, you can choose to download pre-trained models or pre-extracted embeddings for evaluation.
@@ -88,7 +88,7 @@ mkdir -p data/BIOSCAN_5M/split_data
 cd data/BIOSCAN_5M/split_data
 wget https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/BIOSCAN_5M.hdf5
 ```
-For more information about the hdf5 files, please check [Link](https://github.com/3dlg-hcvc/bioscan-clip/blob/main/DATA.md)
+For more information about the hdf5 files, please check [DATA.md](DATA.md).
 
 ### Download data for generating hdf5 files
 
@@ -225,14 +225,14 @@ cd Fine-Grained-ZSL-with-DNA/BZSL-Python
 python Demo.py --using_bioscan_clip_image_feature --datapath ../data --side_info dna_bioscan_clip --alignment --tuning
 ```
 
-###  Flat the `resluts.csv`.
+###  Flatten the `results.csv`.
 ```shell
 python scripts/flattenCsv.pya -i PATH_TO_RESULTS_CSV -o PATH_TO_FLATTEN_CSV
 ```
 
 # Citing BIOSCAN-CLIP
 If you use BIOSCAN-CLIP in your research, please cite:
-```
+```bibtex
 @article{gong2024bioscan,
   title={BIOSCAN-CLIP: Bridging Vision and Genomics for Biodiversity Monitoring at Scale},
   author={Gong, ZeMing and Wang, Austin T and Haurum, Joakim Bruslund and Lowe, Scott C and Taylor, Graham W and Chang, Angel X},
