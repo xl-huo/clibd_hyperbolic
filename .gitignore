@@ -1,5 +1,6 @@
 __pycache__/
 venv/
+bash/
 visualizations/
 outputs/
 data/
@@ -9,3 +10,11 @@ bioscanclip.egg-info
 html_plots
 extracted_embedding
 Fine-Grained-ZSL-with-DNA
+representation_visualization
+representation_visualization_i2d
+
+.build/
+.env
+.slurmignore
+slurm/
+*.sif

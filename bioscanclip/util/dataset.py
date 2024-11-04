@@ -42,7 +42,7 @@ def prepare(dataset, rank, world_size, batch_size=32, pin_memory=False, num_work
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=shuffle, drop_last=True)
 
     dataloader = DataLoader(
-        dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, sampler=sampler
+        dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, sampler=sampler, drop_last=True
     )
 
     return dataloader
@@ -109,7 +109,10 @@ class Dataset_for_CL(Dataset):
             for_open_clip=False,
     ):
         if hasattr(args.model_config, "dataset") and args.model_config.dataset == "bioscan_5m":
-            self.hdf5_inputs_path = args.bioscan_5m_data.path_to_hdf5_data
+            if hasattr(args.model_config, "train_with_small_subset") and args.model_config.train_with_small_subset:
+                self.hdf5_inputs_path = args.bioscan_5m_data.path_to_smaller_hdf5_data
+            else:
+                self.hdf5_inputs_path = args.bioscan_5m_data.path_to_hdf5_data
             self.dataset = "bioscan_5m"
         else:
             self.hdf5_inputs_path = args.bioscan_data.path_to_hdf5_data
@@ -123,20 +126,26 @@ class Dataset_for_CL(Dataset):
         self.return_language = return_language
         self.for_training = for_training
         self.for_open_clip = for_open_clip
+        self.pre_train_with_small_set = False
+        if hasattr(args.model_config, "train_with_small_subset"):
+            self.pre_train_with_small_set = args.model_config.train_with_small_subset
+        language_model_name = "prajjwal1/bert-small"
+        self.tokenizer, _ = load_pre_trained_bert(language_model_name)
+
         if self.for_open_clip:
             # self.tokenizer = open_clip.get_tokenizer('ViT-B-32')
             self.tokenizer = None
         else:
-            self.tokenizer, _ = load_pre_trained_bert()
-
-
+            if hasattr(args.model_config, "language"):
+                language_model_name="prajjwal1/bert-small"
+                if hasattr(args.model_config.language, "pre_train_model"):
+                    language_model_name = args.model_config.language.pre_train_model
+                self.tokenizer, _ = load_pre_trained_bert(language_model_name)
 
         list_of_label_dict = get_array_of_label_dicts(self.hdf5_inputs_path, split)
         self.list_of_label_string = []
         for i in list_of_label_dict:
             self.list_of_label_string.append(i['order'] + ' ' + i['family'] + ' ' + i['genus'] + ' ' + i['species'])
-
-
 
         if self.for_training:
             if hasattr(args.model_config,
@@ -254,15 +263,19 @@ class Dataset_for_CL(Dataset):
             language_attention_mask = torch.zeros(1, )
         else:
 
-            # language_tokens = self.tokenizer([self.list_of_label_string[idx]], padding="max_length", max_length=20,
-            #                                  truncation=True)
-            # language_input_ids = language_tokens['input_ids']
-            # language_token_type_ids = language_tokens['token_type_ids']
-            # language_attention_mask = language_tokens['attention_mask']
+            language_tokens = self.tokenizer([self.list_of_label_string[idx]], padding="max_length", max_length=20,
+                                             truncation=True)
+            language_input_ids = language_tokens['input_ids']
+            language_token_type_ids = language_tokens['token_type_ids']
+            language_attention_mask = language_tokens['attention_mask']
 
-            language_input_ids = self.hdf5_split_group["language_tokens_input_ids"][idx]
-            language_token_type_ids = self.hdf5_split_group["language_tokens_token_type_ids"][idx]
-            language_attention_mask = self.hdf5_split_group["language_tokens_attention_mask"][idx]
+            language_input_ids = torch.tensor(language_input_ids[0])
+            language_token_type_ids = torch.tensor(language_token_type_ids[0])
+            language_attention_mask = torch.tensor(language_attention_mask[0])
+
+            # language_input_ids = self.hdf5_split_group["language_tokens_input_ids"][idx]
+            # language_token_type_ids = self.hdf5_split_group["language_tokens_token_type_ids"][idx]
+            # language_attention_mask = self.hdf5_split_group["language_tokens_attention_mask"][idx]
 
         return (
             curr_processid,
@@ -278,9 +291,16 @@ class Dataset_for_CL(Dataset):
 def get_len_dict(args):
     length_dict = {}
     if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "bioscan_5m":
-        with h5py.File(args.bioscan_5m_data.path_to_hdf5_data, "r") as h5file:
-            for split in list(h5file.keys()):
-                length_dict[split] = len(h5file[split]["image"])
+        if hasattr(args.model_config, "train_with_small_subset") and args.model_config.train_with_small_subset:
+            with h5py.File(args.bioscan_5m_data.path_to_smaller_hdf5_data, "r") as h5file:
+                for split in list(h5file.keys()):
+                    length_dict[split] = len(h5file[split]["image"])
+        else:
+            with h5py.File(args.bioscan_5m_data.path_to_hdf5_data, "r") as h5file:
+                for split in list(h5file.keys()):
+                    length_dict[split] = len(h5file[split]["image"])
+
+
     else:
         with h5py.File(args.bioscan_data.path_to_hdf5_data, "r") as h5file:
             for split in list(h5file.keys()):
@@ -300,7 +320,6 @@ def construct_dataloader(
         rank=None,
         shuffle=False,
 ):
-
     for_open_clip = False
     if hasattr(args.model_config, "for_open_clip"):
         for_open_clip = args.model_config.for_open_clip
@@ -318,7 +337,10 @@ def construct_dataloader(
     if dna_type == "sequence":
 
         if args.model_config.dataset == "bioscan_5m":
-            hdf5_file = h5py.File(args.bioscan_5m_data.path_to_hdf5_data, "r", libver="latest")
+            if hasattr(args.model_config, "train_with_small_subset") and args.model_config.train_with_small_subset:
+                hdf5_file = h5py.File(args.bioscan_5m_data.path_to_smaller_hdf5_data, "r", libver="latest")
+            else:
+                hdf5_file = h5py.File(args.bioscan_5m_data.path_to_hdf5_data, "r", libver="latest")
         else:
             hdf5_file = h5py.File(args.bioscan_data.path_to_hdf5_data, "r", libver="latest")
 
@@ -795,54 +817,53 @@ class INSECTDataset(Dataset):
         self.images = image_hdf5_path
         self.for_open_clip = for_open_clip
 
-        if self.image_input_type == "image":
-            if self.for_training:
-                if self.for_open_clip:
-                    self.transform = transforms.Compose(
-                        [
-                            transforms.ToTensor(),
 
-                            transforms.Resize(size=256, antialias=True),
-                            transforms.RandomResizedCrop(224, antialias=True),
-                            transforms.Normalize((0.48145466, 0.4578275, 0.40821073),
-                                                 (0.26862954, 0.26130258, 0.27577711)),
-                            transforms.RandomHorizontalFlip(),
-                            transforms.RandomVerticalFlip(),
-                            transforms.RandomRotation(degrees=(-45, 45)),
-                            # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
-                        ]
-                    )
-                else:
-                    self.transform = transforms.Compose(
-                        [
-                            transforms.ToTensor(),
-                            transforms.Resize(size=256, antialias=True),
-                            transforms.RandomResizedCrop(224, antialias=True),
-                            transforms.RandomHorizontalFlip(),
-                            transforms.RandomVerticalFlip(),
-                            transforms.RandomRotation(degrees=(-45, 45)),
-                            # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
-                        ]
-                    )
+        if self.for_training:
+            if self.for_open_clip:
+                self.transform = transforms.Compose(
+                    [
+                        transforms.ToTensor(),
+                        transforms.Resize(size=256, antialias=True),
+                        transforms.RandomResizedCrop(224, antialias=True),
+                        transforms.Normalize((0.48145466, 0.4578275, 0.40821073),
+                                             (0.26862954, 0.26130258, 0.27577711)),
+                        transforms.RandomHorizontalFlip(),
+                        transforms.RandomVerticalFlip(),
+                        transforms.RandomRotation(degrees=(-45, 45)),
+                        # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                    ]
+                )
             else:
-                if self.for_open_clip:
-                    self.transform = transforms.Compose(
-                        [
-                            transforms.ToTensor(),
-                            transforms.Resize(size=256, antialias=True),
-                            transforms.CenterCrop(224),
-                            transforms.Normalize((0.48145466, 0.4578275, 0.40821073),
-                                                 (0.26862954, 0.26130258, 0.27577711)),
-                        ]
-                    )
-                else:
-                    self.transform = transforms.Compose(
-                        [
-                            transforms.ToTensor(),
-                            transforms.Resize(size=256, antialias=True),
-                            transforms.CenterCrop(224),
-                        ]
-                    )
+                self.transform = transforms.Compose(
+                    [
+                        transforms.ToTensor(),
+                        transforms.Resize(size=256, antialias=True),
+                        transforms.RandomResizedCrop(224, antialias=True),
+                        transforms.RandomHorizontalFlip(),
+                        transforms.RandomVerticalFlip(),
+                        transforms.RandomRotation(degrees=(-45, 45)),
+                        # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                    ]
+                )
+        else:
+            if self.for_open_clip:
+                self.transform = transforms.Compose(
+                    [
+                        transforms.ToTensor(),
+                        transforms.Resize(size=256, antialias=True),
+                        transforms.CenterCrop(224),
+                        transforms.Normalize((0.48145466, 0.4578275, 0.40821073),
+                                             (0.26862954, 0.26130258, 0.27577711)),
+                    ]
+                )
+            else:
+                self.transform = transforms.Compose(
+                    [
+                        transforms.ToTensor(),
+                        transforms.Resize(size=256, antialias=True),
+                        transforms.CenterCrop(224),
+                    ]
+                )
 
     @property
     def image_ids(self):
@@ -854,8 +875,8 @@ class INSECTDataset(Dataset):
     def load_image(self, id):
         selected_dataset = self.hdf5_images['images'][id]
         curr_image = Image.open(io.BytesIO(selected_dataset[:]))
-        if self.image_transforms is not None:
-            curr_image = self.image_transforms(curr_image)
+        if self.transform is not None:
+            curr_image = self.transform(curr_image)
         return curr_image
 
     def __len__(self):

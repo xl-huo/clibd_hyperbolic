@@ -3,12 +3,11 @@ import wandb
 import psutil
 import torch.distributed.nn
 import torch.distributed as dist
+from torch.cuda.amp import autocast
 
 
-
-
-
-def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimizer, criterion, device, scheduler=None, for_open_clip=False, rank=None, check_cuda_memory=False):
+def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimizer, criterion, device, scaler, scheduler=None,
+                for_open_clip=False, rank=None, fix_temperature=None, enable_autocast=False):
     torch.autograd.set_detect_anomaly(True)
     if rank == 0:
         pbar = tqdm(enumerate(dataloader), total=len(dataloader))
@@ -18,6 +17,7 @@ def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimize
     total_step = len(dataloader)
 
     model.train()
+    stop_flag = False
     for step, batch in pbar:
         processid_batch, image_input_batch, dna_input_batch, input_ids, token_type_ids, attention_mask, label_for_train_batch = batch
         if for_open_clip:
@@ -28,16 +28,27 @@ def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimize
         optimizer.zero_grad()
         image_input_batch = image_input_batch.to(device)
         dna_input_batch = dna_input_batch.to(device)
-        logit_scale = None
-        logit_bias = None
-        image_output, dna_output, language_output = model(image_input_batch, dna_input_batch, language_input)
+
+        if enable_autocast:
+            with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+                image_output, dna_output, language_output, logit_scale, logit_bias = model(image_input_batch,
+                                                                                           dna_input_batch,
+                                                                                           language_input)
+        else:
+            image_output, dna_output, language_output, logit_scale, logit_bias = model(image_input_batch,
+                                                                                       dna_input_batch,
+                                                                                       language_input)
+
 
         label_for_train_batch = label_for_train_batch.to(device)
+        if fix_temperature is not None:
+            logit_scale = 1 / 0.07
+        loss = criterion(image_features=image_output, dna_features=dna_output, text_features=language_output,
+                         labels=label_for_train_batch, logit_scale=logit_scale)
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
-        loss = criterion(image_output, dna_output, language_output, label_for_train_batch)
-        loss.backward()
-
-        optimizer.step()
         if scheduler is not None:
             scheduler.step()
 
@@ -55,8 +66,6 @@ def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimize
             pbar.set_description(
                 f'Epoch: {epoch}||Step: {step}/{total_step}||Loss: {loss.item()} || Total Used CUDA Memory: {total_used_memory / (1024 ** 3):.2f} GB || Total CUDA Memory: {memory_total / (1024 ** 3):.2f} GB || Current LR: {current_lr}')
 
-        if activate_wandb:
-            wandb.log({"loss": loss.item(), "step": step + epoch * len(dataloader), "learning_rate": current_lr})
-
+            if activate_wandb:
+                wandb.log({"loss": loss.item(), "step": step + epoch * len(dataloader), "learning_rate": current_lr})
     print(f'Epoch [{epoch}/{total_epochs}], Loss: {epoch_loss / len(dataloader)}')
-

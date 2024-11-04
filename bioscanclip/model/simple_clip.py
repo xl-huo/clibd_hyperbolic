@@ -12,17 +12,20 @@ import torch
 import open_clip
 
 
-
-
-
 class SimpleCLIP(nn.Module):
-    def __init__(self, image_encoder, dna_encoder, language_encoder, open_clip_model=None):
+    def __init__(self, image_encoder, dna_encoder, language_encoder, open_clip_model=None, init_logit_scale: float = np.log(1 / 0.07),
+                 init_logit_bias: Optional[float] = None):
         super(SimpleCLIP, self).__init__()
         self.image_encoder = image_encoder
         self.dna_encoder = dna_encoder
         self.language_encoder = language_encoder
         self.open_clip_model = open_clip_model
         self.tokenizer_for_open_clip = open_clip.get_tokenizer('ViT-B-32') if open_clip_model is not None else None
+        self.logit_scale = nn.Parameter(torch.ones([]) * init_logit_scale)
+        if init_logit_bias is not None:
+            self.logit_bias = nn.Parameter(torch.ones([]) * init_logit_bias)
+        else:
+            self.logit_bias = None
 
     def forward(self, image_input, dna_input, language_input):
         image_output = None
@@ -47,36 +50,36 @@ class SimpleCLIP(nn.Module):
                 image_output = F.normalize(self.image_encoder(image_input), p=2, dim=-1)
             if self.language_encoder is not None:
                 language_output = F.normalize(self.language_encoder(language_input), p=2, dim=-1)
-        return image_output, dna_output, language_output
+        return image_output, dna_output, language_output, self.logit_scale.exp(), self.logit_bias
 
 
 # Modified from OpenCLIP code
-# class SimpleCLIP_With_Trainable_Temp(nn.Module):
-#     def __init__(self, image_encoder, dna_encoder, language_encoder, init_logit_scale: float = np.log(1 / 0.07),
-#                  init_logit_bias: Optional[float] = None):
-#         super(SimpleCLIP_With_Trainable_Temp, self).__init__()
-#         self.image_encoder = image_encoder
-#         self.dna_encoder = dna_encoder
-#         self.language_encoder = language_encoder
-#         self.logit_scale = nn.Parameter(torch.ones([]) * init_logit_scale)
-#         if init_logit_bias is not None:
-#             self.logit_bias = nn.Parameter(torch.ones([]) * init_logit_bias)
-#         else:
-#             self.logit_bias = None
-#
-#     def forward(self, image_input, dna_input, language_input):
-#         image_output = None
-#         dna_output = None
-#         language_output = None
-#
-#         if self.image_encoder is not None:
-#             image_output = F.normalize(self.image_encoder(image_input), p=2, dim=-1)
-#         if self.dna_encoder is not None:
-#             dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
-#         if self.language_encoder is not None:
-#             language_output = F.normalize(self.language_encoder(language_input), p=2, dim=-1)
-#
-#         return image_output, dna_output, language_output, self.logit_scale.exp(), self.logit_bias
+class SimpleCLIP_With_Trainable_Temp(nn.Module):
+    def __init__(self, image_encoder, dna_encoder, language_encoder, init_logit_scale: float = np.log(1 / 0.07),
+                 init_logit_bias: Optional[float] = None):
+        super(SimpleCLIP_With_Trainable_Temp, self).__init__()
+        self.image_encoder = image_encoder
+        self.dna_encoder = dna_encoder
+        self.language_encoder = language_encoder
+        self.logit_scale = nn.Parameter(torch.ones([]) * init_logit_scale)
+        if init_logit_bias is not None:
+            self.logit_bias = nn.Parameter(torch.ones([]) * init_logit_bias)
+        else:
+            self.logit_bias = None
+
+    def forward(self, image_input, dna_input, language_input):
+        image_output = None
+        dna_output = None
+        language_output = None
+
+        if self.image_encoder is not None:
+            image_output = F.normalize(self.image_encoder(image_input), p=2, dim=-1)
+        if self.dna_encoder is not None:
+            dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
+        if self.language_encoder is not None:
+            language_output = F.normalize(self.language_encoder(language_input), p=2, dim=-1)
+
+        return image_output, dna_output, language_output, self.logit_scale.exp(), self.logit_bias
 
 
 class SimpleCLIPWithClassificationHead(nn.Module):
@@ -123,9 +126,7 @@ class SimpleCLIPWithClassificationHead(nn.Module):
 
 
 def load_clip_model(args, device=None):
-
     torch.cuda.empty_cache()
-
     # Either we have the small models
     image_encoder = None
     dna_encoder = None
@@ -138,16 +139,39 @@ def load_clip_model(args, device=None):
     if hasattr(args.model_config, 'disable_lora'):
         disable_lora = args.model_config.disable_lora
 
-    if args.model_config.image.model == "lora_clip_image" and args.model_config.language.model == "lora_clip_text":
+    using_open_clip = False
+    if hasattr(args.model_config, 'using_open_clip'):
+        disable_lora = args.model_config.using_open_clip
+
+    image_model = None
+    if hasattr(args.model_config, 'image'):
+        if hasattr(args.model_config.image, 'model'):
+            image_model = args.model_config.image.model
+
+    language_model = None
+    if hasattr(args.model_config, 'language'):
+        if hasattr(args.model_config.language, 'model'):
+            language_model = args.model_config.language.model
+
+    dna_model = "barcode_bert"
+    if hasattr(args.model_config, 'dna'):
+        if hasattr(args.model_config.dna, 'model'):
+            dna_model = args.model_config.dna.model
+
+    if using_open_clip or (image_model == "lora_clip_image" and language_model == "lora_clip_text") :
         open_clip_model, _, _ = open_clip.create_model_and_transforms('ViT-L/14', pretrained='commonpool_xl_laion_s13b_b90k')
         open_clip_model.to(device)
         if not disable_lora:
             open_clip_model = add_lora_layer_to_open_clip(open_clip_model, r=4, num_classes=args.model_config.output_dim)
-
     else:
         # For image part
         if args.model_config.image.input_type == "image":
-            pre_trained_timm_vit = timm.create_model('vit_base_patch16_224', pretrained=True)
+            image_model_name = 'vit_base_patch16_224'
+            if hasattr(args.model_config.image, 'pre_train_model'):
+                image_model_name = args.model_config.image.pre_train_model
+            pre_trained_timm_vit = timm.create_model(image_model_name, pretrained=True)
+
+            # pre_trained_timm_vit = timm.create_model('vit_base_patch16_224', pretrained=True)
             if disable_lora:
                 image_encoder = LoRA_ViT_timm(vit_model=pre_trained_timm_vit, r=4,
                                               num_classes=args.model_config.output_dim, lora_layer=[])
@@ -162,7 +186,10 @@ def load_clip_model(args, device=None):
         # For language
         if hasattr(args.model_config, 'language'):
             if args.model_config.language.input_type == "sequence":
-                _, pre_trained_bert = load_pre_trained_bert()
+                language_model_name = 'prajjwal1/bert-small'
+                if hasattr(args.model_config.language, 'pre_train_model'):
+                    language_model_name = args.model_config.language.pre_train_model
+                _, pre_trained_bert = load_pre_trained_bert(language_model_name)
                 if disable_lora:
                     language_encoder = LoRA_bert(model=pre_trained_bert, r=4, num_classes=args.model_config.output_dim,
                                                  lora_layer=[])
@@ -171,12 +198,13 @@ def load_clip_model(args, device=None):
             else:
                 raise TypeError(f"Using {args.model_config.language.input_type} as language input is not support yet.")
 
+
     # For DNA part
     if hasattr(args.model_config, 'dna'):
         if hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
             dna_encoder = Freeze_DNA_Encoder()
         elif args.model_config.dna.input_type == "sequence":
-            if args.model_config.dna.model == "lora_barcode_bert":
+            if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
                 pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
                     bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
                 if disable_lora:

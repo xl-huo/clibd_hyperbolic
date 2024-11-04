@@ -21,15 +21,24 @@ def construct_label_metrix(labels):
     return matrix
 
 class ContrastiveLoss(nn.Module):
-    def __init__(self, criterion, logit_scale):
+    def __init__(self, criterion, logit_scale, local_loss=False, gather_with_grad=False, rank=0, world_size=1, use_horovod=False):
         super(ContrastiveLoss, self).__init__()
         self.criterion = criterion
         self.logit_scale = logit_scale
+        self.local_loss = local_loss
+        self.gather_with_grad = gather_with_grad
+        self.rank = rank
+        self.world_size = world_size
+        self.use_horovod = use_horovod
+        self.criterion = criterion
 
-    def forward(self, image_features, dna_features, text_features, label, logit_scale=1/0.07):
+        self.prev_num_logits = 0
+        self.labels = {}
+
+    def forward(self, image_features, dna_features, text_features, labels, logit_scale):
         feature_list = [image_features, dna_features, text_features]
         feature_list = [item for item in feature_list if item is not None]
-        label = construct_label_metrix(label).to(label.device)
+        label = construct_label_metrix(labels).to(labels.device)
 
         if len(feature_list) < 2:
             raise ValueError("Too less element for calculating the contrastive loss.")
@@ -43,8 +52,12 @@ class ContrastiveLoss(nn.Module):
                 feature_a = F.normalize(feature_a, p=2, dim=1)
                 feature_b = F.normalize(feature_b, p=2, dim=1)
 
-                sim_a_b = self.logit_scale * feature_a @ feature_b.T
-                sim_b_a = self.logit_scale * feature_b @ feature_a.T
+                if logit_scale is not None:
+                    sim_a_b = logit_scale * feature_a @ feature_b.T
+                    sim_b_a = logit_scale * feature_b @ feature_a.T
+                else:
+                    sim_a_b = self.logit_scale * feature_a @ feature_b.T
+                    sim_b_a = self.logit_scale * feature_b @ feature_a.T
 
 
                 loss_a_b = self.criterion(sim_a_b, label)
