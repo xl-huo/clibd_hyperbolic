@@ -335,7 +335,6 @@ def construct_dataloader(
         dna_type = args.model_config.dna.input_type
 
     if dna_type == "sequence":
-
         if args.model_config.dataset == "bioscan_5m":
             if hasattr(args.model_config, "train_with_small_subset") and args.model_config.train_with_small_subset:
                 hdf5_file = h5py.File(args.bioscan_5m_data.path_to_smaller_hdf5_data, "r", libver="latest")

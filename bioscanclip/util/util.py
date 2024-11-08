@@ -575,7 +575,13 @@ def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, small_sp
     seen_gt_label = seen_dict["label_list"]
     unseen_gt_label = unseen_dict["label_list"]
     keys_label = keys_dict["label_list"]
-    pred_dict = {}
+    pred_dict = {
+        "seen_id": seen_dict["processed_id_list"],
+        "seen_gt_label": seen_gt_label,
+        "unseen_id": unseen_dict["processed_id_list"],
+        "unseen_gt_label": unseen_gt_label,
+    }
+
 
     for query_feature_type in All_TYPE_OF_FEATURES_OF_QUERY:
         if query_feature_type not in seen_dict.keys():
@@ -615,6 +621,8 @@ def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, small_sp
             curr_unseen_pred_list = make_prediction(
                 curr_unseen_feature, curr_keys_feature, keys_label, max_k=max_k
             )
+
+
 
             pred_dict[query_feature_type][key_feature_type] = {
                 "curr_seen_pred_list": curr_seen_pred_list,
