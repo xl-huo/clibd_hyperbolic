@@ -3,7 +3,7 @@ This is the official implementation for "CLIBD: Bridging Vision and Genomics for
 Links: [website](https://bioscan-ml.github.io/clibd/) | [paper](https://arxiv.org/abs/2405.17537)
 
 # Overview
-![Teaser](./docs/static/images/method.png)
+![Teaser](./docs/static/images/method.svg)
 Taxonomically classifying organisms at scale is crucial for monitoring biodiversity, understanding ecosystems, and preserving sustainability.  It is possible to taxonomically classify organisms based on their image or their [DNA barcode](https://en.wikipedia.org/wiki/DNA_barcoding).  While DNA barcodes are precise at species identification, they are less readily available than images.  Thus, we investigate whether we can use DNA barcodes to improve taxonomic classification using image.  
 
 We introduce CLIBD, a model uses contrastive learning to map biological images, DNA barcodes, and textual taxonomic labels to the same latent space.  The model is initialized using pretrained encoders for images ([vit-base-patch16-224](https://huggingface.co/google/vit-base-patch16-224)), DNA barcodes ([BarcodeBERT](https://github.com/Kari-Genomics-Lab/BarcodeBERT)), and textual taxonomic labels ([BERT-small](https://huggingface.co/prajjwal1/bert-small)), and the weights of the encoders are fine-tuned using LoRA.
