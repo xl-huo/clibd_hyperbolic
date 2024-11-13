@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Take an BIOSCAN-CLIP results csv and flatten it to one metric per row
+# Take a CLIBD results csv and flatten it to one metric per row
 
 import argparse
 import csv
@@ -19,7 +19,7 @@ def readCsv(input, delimiter=None):
 
 def main():
     # Argument processing
-    parser = argparse.ArgumentParser(description='Flatten BIOSCAN-CLIP results csv')
+    parser = argparse.ArgumentParser(description='Flatten CLIBD results csv')
     parser.add_argument('-i', '--input',
                         required=True,
                         help='Input file of results')
