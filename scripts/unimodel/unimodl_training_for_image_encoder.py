@@ -7,18 +7,25 @@ import torch
 from omegaconf import DictConfig
 
 from bioscanclip.model.simple_clip import load_vit_for_simclr_training
-from bioscanclip.util.dataset import DatasetForSimCLRStyleTraining
+from bioscanclip.util.dataset import DatasetForSimCLRStyleTraining, prepare
 from bioscanclip.util.simclr import SimCLR
 from bioscanclip.util.util import set_seed
+from torch.nn.parallel import DistributedDataParallel as DDP
 
 
 def print_when_rank_zero(message, rank=0):
     if rank is None or rank == 0:
         print(message)
 
+def ddp_setup(rank: int, world_size: int, port):
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = str(port)
+    torch.distributed.init_process_group("nccl", rank=rank, world_size=world_size)
+    torch.cuda.set_device(rank)
 
-def main_process(args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def main_process(rank: int, world_size: int, args):
+    ddp_setup(rank, world_size, str(args.model_config.port))
     if hasattr(args.model_config, "dataset") and args.model_config.dataset == "bioscan_5m":
         hdf5_inputs_path = (args.bioscan_5m_data.path_to_smaller_hdf5_data
                             if hasattr(args.model_config,
@@ -31,19 +38,23 @@ def main_process(args):
     length_of_data = len(h5py.File(hdf5_inputs_path, "r", libver="latest")[split]['image'])
 
     train_dataset = DatasetForSimCLRStyleTraining(args, split, length=length_of_data, transform=None)
-
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.model_config.batch_size, shuffle=True,
-                                               num_workers=8, pin_memory=False, drop_last=True)
+    train_loader = prepare(train_dataset,
+                rank,
+                batch_size=args.model_config.batch_size,
+                world_size=world_size,
+                num_workers=8,
+                shuffle=True)
 
     model = load_vit_for_simclr_training(args, device=None)
+    model = DDP(model, device_ids=[rank], find_unused_parameters=True)
 
     optimizer = torch.optim.Adam(model.parameters(), args.model_config.lr_config.lr,
                                  weight_decay=args.model_config.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                            last_epoch=-1)
-    with torch.cuda.device(device):
-        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, device=device, args=args)
+    with torch.cuda.device(rank):
+        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, device=rank, args=args)
         simclr.train(train_loader)
 
 

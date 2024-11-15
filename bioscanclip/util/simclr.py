@@ -20,6 +20,7 @@ def save_checkpoint(args, state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, os.path.join(ckpt_dir, filename))
     if is_best:
         shutil.copyfile(os.path.join(ckpt_dir, filename), os.path.join(ckpt_dir, 'model_best.pth.tar'))
+    print(f"Checkpoint has been saved at {ckpt_dir}.")
 
 
 def save_config_file(model_checkpoints_folder, args):
@@ -153,6 +154,6 @@ class SimCLR(object):
                     'state_dict': self.model.state_dict(),
                     'optimizer': self.optimizer.state_dict(),
                 }, is_best=is_best, filename=checkpoint_name)
-            print(f"Model checkpoint and metadata has been saved at {wandb.run.dir}.")
+            print(f"Metadata has been saved at {wandb.run.dir}.")
         print("Training has finished.")
 
