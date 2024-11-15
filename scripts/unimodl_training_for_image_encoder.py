@@ -31,7 +31,8 @@ def print_when_rank_zero(message, rank=0):
         print(message)
 
 
-def main_process(rank: int, world_size: int, args):
+def main_process(args):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if hasattr(args.model_config, "dataset") and args.model_config.dataset == "bioscan_5m":
         hdf5_inputs_path = (args.bioscan_5m_data.path_to_smaller_hdf5_data
                             if hasattr(args.model_config,
@@ -55,8 +56,8 @@ def main_process(rank: int, world_size: int, args):
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                            last_epoch=-1)
-    with torch.cuda.device(rank):
-        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, device=rank, args=args)
+    with torch.cuda.device(device):
+        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, device=device, args=args)
         simclr.train(train_loader)
 
 
@@ -79,7 +80,7 @@ def main(args: DictConfig) -> None:
         string = "default seed"
     print("The module is run with %s: %d" % (string, seed))
 
-    mp.spawn(main_process, args=(world_size, args), nprocs=world_size)
+    main_process(args)
 
 
 if __name__ == '__main__':

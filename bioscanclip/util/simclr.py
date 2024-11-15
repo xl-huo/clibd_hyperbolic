@@ -93,7 +93,7 @@ class SimCLR(object):
     def train(self, train_loader):
         scaler = GradScaler(enabled=True)
 
-        wandb.init(project="simclr", config=self.args)
+        wandb.init(project="CLIBD-simclr", name=self.args.model_config.model_output_name)
 
         n_iter = 0
         print(f"Start SimCLR training for {self.args.model_config.epochs} epochs.")
