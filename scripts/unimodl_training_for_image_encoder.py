@@ -47,7 +47,7 @@ def main_process(args):
     train_dataset = DatasetForSimCLRStyleTraining(args, split, length=length_of_data, transform=None)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.model_config.batch_size, shuffle=True,
-                                               num_workers=8, pin_memory=False)
+                                               num_workers=8, pin_memory=False, drop_last=True)
 
     model = load_vit_for_simclr_training(args, device=None)
 
