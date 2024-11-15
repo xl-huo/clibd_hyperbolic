@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch.cuda.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
+import wandb
 import os
 import shutil
 
@@ -91,17 +91,16 @@ class SimCLR(object):
         return logits, labels
 
     def train(self, train_loader):
-
         scaler = GradScaler(enabled=True)
 
-        # save config file
-        save_config_file(self.writer.log_dir, self.args)
+        wandb.init(project="simclr", config=self.args)
 
         n_iter = 0
         print(f"Start SimCLR training for {self.args.model_config.epochs} epochs.")
 
         for epoch_counter in range(self.args.model_config.epochs):
             pbar = tqdm(train_loader, total=len(train_loader))
+            epoch_loss = []
             for images_1, images_2 in pbar:
                 images = torch.cat([images_1, images_2], dim=0)
 
@@ -119,24 +118,26 @@ class SimCLR(object):
                 scaler.step(self.optimizer)
                 scaler.update()
 
+                epoch_loss.append(loss.item())
+
                 if n_iter % self.args.model_config.log_every_n_steps == 0:
-                    top1, top5 = accuracy(logits, labels, topk=(1, 5))
-                    self.writer.add_scalar('loss', loss, global_step=n_iter)
-                    self.writer.add_scalar('acc/top1', top1[0], global_step=n_iter)
-                    self.writer.add_scalar('acc/top5', top5[0], global_step=n_iter)
-                    self.writer.add_scalar('learning_rate', self.scheduler.get_lr()[0], global_step=n_iter)
+                    top1, _ = accuracy(logits, labels, topk=(1, 5))
+                    wandb.log({"loss": loss, "acc/top1": top1[0], "learning_rate": self.scheduler.get_lr()[0],
+                               "n_iter": n_iter})
 
                 n_iter += 1
 
                 pbar.set_description(f"Epoch: {epoch_counter}. Loss: {loss:.4f}.")
-            
+
+            epoch_loss_avg = sum(epoch_loss) / len(epoch_loss)
+            wandb.log({"epoch_loss": epoch_loss_avg, "epoch": epoch_counter})
+
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
                 self.scheduler.step()
-            print(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}")
+            print(f"Epoch: {epoch_counter}\tLoss: {epoch_loss_avg:.4f}\tTop1 accuracy: {top1[0]}")
 
         print("Training has finished.")
-        # save model checkpoints
         checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(self.args.model_config.epochs)
         save_checkpoint(
             self.args,
@@ -145,5 +146,6 @@ class SimCLR(object):
                 'arch': self.args.model_config.arch,
                 'state_dict': self.model.state_dict(),
                 'optimizer': self.optimizer.state_dict(),
-            }, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name))
-        print(f"Model checkpoint and metadata has been saved at {self.writer.log_dir}.")
+            }, is_best=False, filename=os.path.join(wandb.run.dir, checkpoint_name))
+        print(f"Model checkpoint and metadata has been saved at {wandb.run.dir}.")
+
