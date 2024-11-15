@@ -19,7 +19,7 @@ def save_checkpoint(args, state, is_best, filename='checkpoint.pth.tar'):
     os.makedirs(ckpt_dir, exist_ok=True)
     torch.save(state, os.path.join(ckpt_dir, filename))
     if is_best:
-        shutil.copyfile(os.path.join(ckpt_dir, filename), 'model_best.pth.tar')
+        shutil.copyfile(os.path.join(ckpt_dir, filename), os.path.join(ckpt_dir, 'model_best.pth.tar'))
 
 
 def save_config_file(model_checkpoints_folder, args):
@@ -97,7 +97,7 @@ class SimCLR(object):
 
         n_iter = 0
         print(f"Start SimCLR training for {self.args.model_config.epochs} epochs.")
-
+        best_loss = None
         for epoch_counter in range(self.args.model_config.epochs):
             pbar = tqdm(train_loader, total=len(train_loader))
             epoch_loss = []
@@ -136,16 +136,22 @@ class SimCLR(object):
             if epoch_counter >= 10:
                 self.scheduler.step()
             print(f"Epoch: {epoch_counter}\tLoss: {epoch_loss_avg:.4f}\tTop1 accuracy: {top1[0]}")
+            checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(self.args.model_config.epochs)
 
+            is_best = False
+
+            if best_loss is None or epoch_loss_avg < best_loss:
+                best_loss = epoch_loss_avg
+                is_best = True
+
+            save_checkpoint(
+                self.args,
+                {
+                    'epoch': self.args.model_config.epochs,
+                    'arch': self.args.model_config.arch,
+                    'state_dict': self.model.state_dict(),
+                    'optimizer': self.optimizer.state_dict(),
+                }, is_best=is_best, filename=checkpoint_name)
+            print(f"Model checkpoint and metadata has been saved at {wandb.run.dir}.")
         print("Training has finished.")
-        checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(self.args.model_config.epochs)
-        save_checkpoint(
-            self.args,
-            {
-                'epoch': self.args.model_config.epochs,
-                'arch': self.args.model_config.arch,
-                'state_dict': self.model.state_dict(),
-                'optimizer': self.optimizer.state_dict(),
-            }, is_best=False, filename=os.path.join(wandb.run.dir, checkpoint_name))
-        print(f"Model checkpoint and metadata has been saved at {wandb.run.dir}.")
 

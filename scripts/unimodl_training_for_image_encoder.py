@@ -1,29 +1,15 @@
-import copy
-import datetime
-import json
 import os
-import hydra
-import numpy as np
+import os
 
-import torch
-import torch.multiprocessing as mp
-import torch.nn as nn
-import torch.optim as optim
-import torch.optim.lr_scheduler as lr_scheduler
-from torch.cuda.amp import GradScaler
-import torch.distributed as dist
-import wandb
-from omegaconf import DictConfig, OmegaConf, open_dict
-
-from bioscanclip.epoch.train_epoch import train_epoch
-from inference_and_eval import get_features_and_label, inference_and_print_result
-from bioscanclip.model.loss_func import ContrastiveLoss, ClipLoss
-from bioscanclip.model.simple_clip import load_clip_model, load_vit_for_simclr_training
-from bioscanclip.util.util import set_seed
-from bioscanclip.util.dataset import load_dataloader, load_insect_dataloader, DatasetForSimCLRStyleTraining, prepare
-from bioscanclip.util.util import scale_learning_rate
-from bioscanclip.util.simclr import SimCLR
 import h5py
+import hydra
+import torch
+from omegaconf import DictConfig
+
+from bioscanclip.model.simple_clip import load_vit_for_simclr_training
+from bioscanclip.util.dataset import DatasetForSimCLRStyleTraining
+from bioscanclip.util.simclr import SimCLR
+from bioscanclip.util.util import set_seed
 
 
 def print_when_rank_zero(message, rank=0):
