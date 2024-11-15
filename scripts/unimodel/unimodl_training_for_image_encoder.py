@@ -1,6 +1,6 @@
 import os
 import os
-
+import torch.multiprocessing as mp
 import h5py
 import hydra
 import torch
@@ -76,8 +76,7 @@ def main(args: DictConfig) -> None:
         seed = set_seed(seed=int(default_seed));
         string = "default seed"
     print("The module is run with %s: %d" % (string, seed))
-
-    main_process(args)
+    mp.spawn(main_process, args=(world_size, args), nprocs=world_size)
 
 
 if __name__ == '__main__':
