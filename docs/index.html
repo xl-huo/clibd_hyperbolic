@@ -3,11 +3,11 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="description" content="BIOSCAN-CLIP: Bridging Vision and Genomics for Biodiversity Monitoring at Scale">
-  <meta name="keywords" content="BIOSCAN-CLIP, BIOSCAN, DNA barcode, taxonomic classification">
+  <meta name="description" content="CLIBD: Bridging Vision and Genomics for Biodiversity Monitoring at Scale">
+  <meta name="keywords" content="CLIBD, BIOSCAN, DNA barcode, taxonomic classification">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   
-  <title>BIOSCAN-CLIP: Bridging Vision and Genomics for Biodiversity Monitoring at Scale</title>
+  <title>CLIBD: Bridging Vision and Genomics for Biodiversity Monitoring at Scale</title>
 
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
 
@@ -24,23 +24,22 @@
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
   <script src="./static/js/index.js"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-143T3B6DBJ"></script>
+  <script>
+    window.dataLayer=window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-143T3B6DBJ');
+  </script>
 </head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-143T3B6DBJ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-143T3B6DBJ');
-</script>
 <body>
   <section class="hero">
     <div class="hero-body">
       <div class="container is-max-desktop">
         <div class="columns is-centered">
           <div class="column has-text-centered">
-            <h1 class="title is-1 publication-title">BIOSCAN-CLIP: Bridging Vision and Genomics for Biodiversity Monitoring at Scale</h1>
+            <h1 class="title is-1 publication-title">CLIBD: Bridging Vision and Genomics for Biodiversity Monitoring at Scale</h1>
             <div class="is-size-5 publication-authors">
               <span class="author-block">
                 <a href="https://zmgong.github.io/">ZeMing Gong</a><sup>1</sup>,</span>
@@ -154,9 +153,9 @@
         <div class="column is-full-width">
           <div class="content has-text-justified">
             <h3 class="title is-3">Overview</h3>
-            <img src="./static/images/method.png" class="interpolation-image" alt="BIOSCAN-CLIP method overview" />
+            <img src="./static/images/method.png" class="interpolation-image" alt="CLIBD method overview" />
             <p>
-              Our BIOSCAN-CLIP model consists of three encoders for processing images, DNA barcodes, and text. 
+              Our CLIBD model consists of three encoders for processing images, DNA barcodes, and text.
               We start with pretrained encoders and fine-tune them using contrastive loss to align the image, DNA, and text embeddings. 
               At inference time, we embed a query image and match it to a database of existing image and DNA embeddings (keys). 
               We use cosine similarity to find the closest key embedding and use its taxonomic label to classify the query image.
@@ -193,10 +192,10 @@
               we can achieve more accurate taxonomic classification.  Note that we use the pretrained model of BioCLIP
               which is trained on a wider dataset than ours, and does not use the same careful training split we use so that
               it is likely that their model was already exposed to our <i>unseen</i> species during training.  We believe these two
-              differences account for the higher performance of our BIOSCAN-CLIP (with image-text embeddings) on the seen subset
+              differences account for the higher performance of our CLIBD (with image-text embeddings) on the seen subset
               but lower performance on the unseen subset.
             </p>
-            <img src="./static/images/bioclip-comparison.png" class="interpolation-image" alt="Comparison of BIOSCAN-CLIP vs BioCLIP" />
+            <img src="./static/images/bioclip-comparison.png" class="interpolation-image" alt="Comparison of CLIBD vs BioCLIP" />
           </div>
         </div>
 
@@ -207,28 +206,32 @@
 
   <section class="section" id="BibTeX">
     <div class="container is-max-desktop content">
-      <h3 class="title">BibTeX for BIOSCAN-CLIP</h3>
-      <pre><code>
-      @article{gong2024bioscanclip,
-          author    = {Gong, ZeMing and Wang, Austin T. and Haurum, Joakim Bruslund and Lowe, Scott C. and Taylor, Graham W. and Chang, Angel X.},
-          title     = {{BIOSCAN-CLIP}: Bridging Vision and Genomics for Biodiversity Monitoring at Scale},
-          journal   = {arXiv preprint},
-          year      = {2024},
-          eprint={2405.17537},
-          archivePrefix={arXiv},
-          primaryClass={cs.AI}    
-      }
-      </code></pre>
+      <h3 class="title">BibTeX for CLIBD</h3>
+<pre>
+@article{gong2024clibd,
+    author={Gong, ZeMing and Wang, Austin T. and Huo, Xiaoliang and Haurum, Joakim Bruslund and Lowe, Scott C. and Taylor, Graham W. and Chang, Angel X.},
+    title={{CLIBD}: Bridging Vision and Genomics for Biodiversity Monitoring at Scale},
+    journal={arXiv preprint},
+    year={2024},
+    eprint={2405.17537},
+    archivePrefix={arXiv},
+    primaryClass={cs.AI},
+    doi={10.48550/arxiv.2405.17537},
+}
+</pre>
       <h3 class="title">BibTeX for BIOSCAN-1M</h3>
-      <pre><code>
-        @article{gharaee2024step,
-            title={A Step Towards Worldwide Biodiversity Assessment: The BIOSCAN-1M Insect Dataset},
-            author={Gharaee, Zahra and Gong, ZeMing and Pellegrino, Nicholas and Zarubiieva, Iuliia and Haurum, Joakim Bruslund and Lowe, Scott and McKeown, Jaclyn and Ho, Chris and McLeod, Joschka and Wei, Yi-Yun and others},
-            journal={Advances in Neural Information Processing Systems, Datasets and Benchmarks},
-            volume={36},
-            year={2024}
-          }
-        </code></pre>
+<pre>
+@inproceedings{bioscan1m,
+    title={A Step Towards Worldwide Biodiversity Assessment: The {BIOSCAN-1M} Insect Dataset},
+    booktitle={Advances in Neural Information Processing Systems},
+    author={Gharaee, Zahra and Gong, ZeMing and Pellegrino, Nicholas and Zarubiieva, Iuliia and Haurum, Joakim Bruslund and Lowe, Scott C. and McKeown, Jaclyn T. A. and Ho, Chris C. Y. and McLeod, Joschka and Wei, Yi-Yun C. and Agda, Jireh and Ratnasingham, Sujeevan and Steinke, Dirk and Chang, Angel X. and Taylor, Graham W. and Fieguth, Paul},
+    pages={43593--43619},
+    publisher={Curran Associates, Inc.},
+    year={2023},
+    volume={36},
+    url={https://proceedings.neurips.cc/paper_files/paper/2023/file/87dbbdc3a685a97ad28489a1d57c45c1-Paper-Datasets_and_Benchmarks.pdf},
+}
+</pre>
     </div>
   </section>
 

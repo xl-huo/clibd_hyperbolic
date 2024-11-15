@@ -35,35 +35,13 @@ We provide pretrained embeddings and model weights.  We evaluate our models by e
 |---------------|---------------------|-------------|---------|--------|
 | BIOSCAN-1M    |  None               |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_1m/no_align_1m/extracted_features.zip) |  N/A   |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl_no_loading.yaml)  |
 | BIOSCAN-1M    |  **I**mage + **D**NA        |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/extracted_embedding/bioscan_1m/image_dna_4gpu/extracted_feature_from_val_split.hdf5)|  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/final_experiments/image_dna_4gpu_50epoch/best.pth)   |  [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_1m/final_experiments/image_dna_seed_42.yaml)  |
-| BIOSCAN-1M    |  **I**mage + **D**NA + **T**ax  |  [Embedding]()       |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/final_experiments/image_dna_text_4gpu_50epoch/best.pth) |  [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_1m/final_experiments/image_dna_text_seed_42.yaml) |
+| BIOSCAN-1M    |  **I**mage + **D**NA + **T**ax  |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/extracted_embedding/bioscan_1m/image_dna_text_4gpu/extracted_feature_from_val_split.hdf5)       |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/final_experiments/image_dna_text_4gpu_50epoch/best.pth) |  [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_1m/final_experiments/image_dna_text_seed_42.yaml) |
 | BIOSCAN-5M    |  None               |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/no_align_5m/extracted_features.zip)       |  N/A   |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/config_files/for_bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_5m_no_loading.yaml)  |
-| BIOSCAN-5M    |  **I**mage + **D**NA        |  [Embedding]()      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/new_5M_training/trained_with_5M_image_dna/best.pth)    |  [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_5m/final_experiments/image_dna_seed_42.yaml)  |
-| BIOSCAN-5M    |  **I**mage + **D**NA + **T**ax  |  [Embedding]()      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/new_5M_training/trained_with_5M_image_dna_text/best.pth)|   [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_5m/final_experiments/image_dna_text_seed_42.yaml)  |
+| BIOSCAN-5M    |  **I**mage + **D**NA        |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/extracted_embedding/bioscan_5m/image_dna_4gpu/extracted_feature_from_val_split.hdf5)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/new_5M_training/trained_with_5M_image_dna/best.pth)    |  [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_5m/final_experiments/image_dna_seed_42.yaml)  |
+| BIOSCAN-5M    |  **I**mage + **D**NA + **T**ax  |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/extracted_embedding/bioscan_5m/image_dna_text_4gpu/extracted_feature_from_val_split.hdf5)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/new_5M_training/trained_with_5M_image_dna_text/best.pth)|   [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_5m/final_experiments/image_dna_text_seed_42.yaml)  |
 
 ## Quick start
-Instead of conducting a full training, you can choose to download pre-trained models or pre-extracted embeddings for evaluation.
-
-To evaluate with a pre-trained model or pre-extracted embeddings, you need to place the corresponding trained model or extracted embeddings in the location specified in the config file：
-
-For example, evaluate with model that pre-trained with Image+DNA+Text from BIOSCAN-5M:
-```shell
-mkdir -p ckpt/bioscan_clip/trained_with_bioscan_5m
-cd ckpt/bioscan_clip/trained_with_bioscan_5m
-wget https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_5m/image_dna_text.pth
-cd ../../..
-python scripts/inference_and_eval.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_5m'
-```
-Note: Running `inference_and_eval.py` with pre-trained model with generate the extracted embeddings and labels.
-
-Evaluate with extracted embeddings:
-```shell
-mkdir -p extracted_embedding/bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_ssl_batch_size_400_5m
-cd extracted_embedding/bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_ssl_batch_size_400_5m
-wget https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_ssl_batch_size_400_5m/extracted_feature_from_val_split.hdf5
-wget https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/extracted_embedding/bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_ssl_batch_size_400_5m/labels_val.json
-cd ../../..
-python scripts/inference_and_eval.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_5m'
-```
+Instead of conducting a full training, you can choose to download pre-trained models or pre-extracted embeddings for evaluation from the table. You may need to posistion the downloaded checkpoints and extracted features in to the proper position based on the config file.
 
 # Download dataset
 ![Data Partioning Visual](./docs/static/images/partition.png) <br>
