@@ -98,6 +98,7 @@ class SimCLR(object):
         n_iter = 0
         print(f"Start SimCLR training for {self.args.model_config.epochs} epochs.")
         best_loss = None
+
         for epoch_counter in range(self.args.model_config.epochs):
             pbar = tqdm(train_loader, total=len(train_loader))
             epoch_loss = []
@@ -148,7 +149,7 @@ class SimCLR(object):
                 self.args,
                 {
                     'epoch': self.args.model_config.epochs,
-                    'arch': self.args.model_config.arch,
+                    'arch': "vit_base_patch16_224",
                     'state_dict': self.model.state_dict(),
                     'optimizer': self.optimizer.state_dict(),
                 }, is_best=is_best, filename=checkpoint_name)
