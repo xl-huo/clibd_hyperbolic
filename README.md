@@ -44,7 +44,7 @@ We provide pretrained embeddings and model weights.  We evaluate our models by e
 Instead of conducting a full training, you can choose to download pre-trained models or pre-extracted embeddings for evaluation from the table. You may need to posistion the downloaded checkpoints and extracted features in to the proper position based on the config file.
 
 # Download dataset
-![Data Partioning Visual](./docs/static/images/partition.png) <br>
+![Data Partioning Visual](./docs/static/images/partition.svg) <br>
 For BIOSCAN 1M, we partition the dataset for our CLIBD experiments into a training set for contrastive learning, and validation and test partitions. The training set has records without any species labels as well as a set of seen species. The validation and test sets include seen and unseen species. These images are further split into subpartitions of queries and keys for evaluation.
 
 For BIOSCAN 5M, we use the dataset partitioning established in the BIOSCAN-5M paper.
