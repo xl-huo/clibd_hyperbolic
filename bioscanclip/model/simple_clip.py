@@ -125,6 +125,18 @@ class SimpleCLIPWithClassificationHead(nn.Module):
         return image_output, dna_output, language_output, output
 
 
+def load_vit_for_simclr_training(args, device=None):
+    torch.cuda.empty_cache()
+    image_model_name = 'vit_base_patch16_224'
+    if hasattr(args.model_config.image, 'pre_train_model'):
+        image_model_name = args.model_config.image.pre_train_model
+    pre_trained_timm_vit = timm.create_model(image_model_name, pretrained=True)
+    for param in pre_trained_timm_vit.parameters():
+        param.requires_grad = True
+    return pre_trained_timm_vit
+
+
+
 def load_clip_model(args, device=None):
     torch.cuda.empty_cache()
     # Either we have the small models

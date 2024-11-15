@@ -14,6 +14,9 @@ from sklearn.preprocessing import normalize
 import os
 import csv
 from omegaconf import DictConfig, OmegaConf
+import h5py
+from PIL import Image
+import io
 
 LEVELS = ["order", "family", "genus", "species"]
 All_TYPE_OF_FEATURES_OF_QUERY = [
@@ -575,13 +578,20 @@ def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, small_sp
     seen_gt_label = seen_dict["label_list"]
     unseen_gt_label = unseen_dict["label_list"]
     keys_label = keys_dict["label_list"]
-    pred_dict = {
-        "seen_id": seen_dict["processed_id_list"],
-        "seen_gt_label": seen_gt_label,
-        "unseen_id": unseen_dict["processed_id_list"],
-        "unseen_gt_label": unseen_gt_label,
-    }
-
+    try:
+        pred_dict = {
+            "seen_id": seen_dict["processed_id_list"],
+            "seen_gt_label": seen_gt_label,
+            "unseen_id": unseen_dict["processed_id_list"],
+            "unseen_gt_label": unseen_gt_label,
+        }
+    except:
+        pred_dict = {
+            "seen_id": seen_dict["file_name_list"],
+            "seen_gt_label": seen_gt_label,
+            "unseen_id": unseen_dict["file_name_list"],
+            "unseen_gt_label": unseen_gt_label,
+        }
 
     for query_feature_type in All_TYPE_OF_FEATURES_OF_QUERY:
         if query_feature_type not in seen_dict.keys():
@@ -621,8 +631,6 @@ def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, small_sp
             curr_unseen_pred_list = make_prediction(
                 curr_unseen_feature, curr_keys_feature, keys_label, max_k=max_k
             )
-
-
 
             pred_dict[query_feature_type][key_feature_type] = {
                 "curr_seen_pred_list": curr_seen_pred_list,
@@ -711,3 +719,85 @@ def scale_learning_rate(lr, batch_size, base_batch_size=500, world_size=1):
     total_batch_size = batch_size * world_size
     lr = lr * total_batch_size / base_batch_size
     return lr
+
+
+def find_closest_match(query_feature, keys_feature, keys_label, with_similarity=False, with_indices=False, max_k=5):
+    index = faiss.IndexFlatIP(keys_feature.shape[-1])
+    keys_feature = normalize(keys_feature, norm="l2", axis=1).astype(np.float32)
+    query_feature = normalize(query_feature, norm="l2", axis=1).astype(np.float32)
+    index.add(keys_feature)
+    pred_list = []
+
+    similarities, indices = index.search(query_feature, max_k)
+    for key_indices in indices:
+        k_pred_in_diff_level = {}
+        for level in LEVELS:
+            if level not in k_pred_in_diff_level.keys():
+                k_pred_in_diff_level[level] = []
+            for i in key_indices:
+                try:
+                    k_pred_in_diff_level[level].append(keys_label[i][level])
+                except:
+                    print(keys_label)
+                    exit()
+        pred_list.append(k_pred_in_diff_level)
+
+    out = [pred_list]
+    output_dict = {
+        "pred_list": pred_list,
+        "similarities": similarities,
+        "indices": indices
+    }
+    return output_dict
+
+def create_id_index_map(args):
+    if args.model_config.dataset == "bioscan_1m" and os.path.exists(args.bioscan_data.path_to_id_to_position_mapping):
+        with open(args.bioscan_data.path_to_id_to_position_mapping, 'r') as file:
+            id_index_map = json.load(file)
+        return id_index_map
+    elif args.model_config.dataset == "bioscan_5m" and os.path.exists(args.bioscan_5m_data.path_to_id_to_position_mapping):
+        with open(args.bioscan_5m_data.path_to_id_to_position_mapping, 'r') as file:
+            id_index_map = json.load(file)
+        return id_index_map
+    else:
+        if args.model_config.dataset == "bioscan_1m":
+            hdf5_path = args.bioscan_data.path_to_hdf5_data
+        elif args.model_config.dataset == "bioscan_5m":
+            hdf5_path = args.bioscan_5m_data.path_to_hdf5_data
+
+        id_index_map = {}
+        with h5py.File(hdf5_path, 'r') as file:
+            for group_name in file.keys():
+                curr_group = file[group_name]
+                if args.model_config.dataset == "bioscan_5m":
+                    ids = [item.decode("utf-8") for item in curr_group["processid"]]
+                elif args.model_config.dataset == "bioscan_1m":
+                    ids = [item.decode("utf-8") for item in curr_group["image_file"]]
+                for index, id in enumerate(ids):
+                    id_index_map[id] = {'group': group_name, 'index': index}
+
+        # save the id_index_map
+        if args.model_config.dataset == "bioscan_1m":
+            with open(args.bioscan_data.path_to_id_to_position_mapping, 'w') as file:
+                json.dump(id_index_map, file)
+        elif args.model_config.dataset == "bioscan_5m":
+            with open(args.bioscan_5m_data.path_to_id_to_position_mapping, 'w') as file:
+                json.dump(id_index_map, file)
+
+        return id_index_map
+
+def load_image_from_hdf5_with_id_as_input(args, data_id, id_to_split_and_position):
+    if args.model_config.dataset == "bioscan_1m":
+        hdf5_path = args.bioscan_data.path_to_hdf5_data
+    elif args.model_config.dataset == "bioscan_5m":
+        hdf5_path = args.bioscan_5m_data.path_to_hdf5_data
+
+    with h5py.File(hdf5_path, 'r') as file:
+        group = id_to_split_and_position[data_id]['group']
+        idx = id_to_split_and_position[data_id]['index']
+        data = file[group]
+        enc_length = data["image_mask"][idx]
+        image_enc_padded = data["image"][idx].astype(np.uint8)
+        image_enc = image_enc_padded[:enc_length]
+        image = Image.open(io.BytesIO(image_enc))
+        return image.resize((256, 256))

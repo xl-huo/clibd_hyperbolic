@@ -20,6 +20,7 @@ import open_clip
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 def get_label_ids(input_labels):
     label_to_id = {}
 
@@ -99,9 +100,9 @@ class Dataset_for_CL(Dataset):
             self,
             args,
             split,
-            length,
-            image_type,
-            dna_type,
+            length=None,
+            image_type="image",
+            dna_type="sequence",
             dna_tokens=None,
             return_language=False,
             labels=None,
@@ -137,7 +138,7 @@ class Dataset_for_CL(Dataset):
             self.tokenizer = None
         else:
             if hasattr(args.model_config, "language"):
-                language_model_name="prajjwal1/bert-small"
+                language_model_name = "prajjwal1/bert-small"
                 if hasattr(args.model_config.language, "pre_train_model"):
                     language_model_name = args.model_config.language.pre_train_model
                 self.tokenizer, _ = load_pre_trained_bert(language_model_name)
@@ -286,6 +287,71 @@ class Dataset_for_CL(Dataset):
             language_attention_mask,
             self.labels[idx],
         )
+
+
+class GaussianBlur(object):
+    def __init__(self, kernel_size):
+        radius = kernel_size // 2
+        self.blur = transforms.GaussianBlur(kernel_size, sigma=(0.1, 2.0))
+
+    def __call__(self, img):
+        return self.blur(img)
+
+
+def get_simclr_pipeline_transform(size, s=1):
+    color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
+    kernel_size = int(0.1 * size)
+    if kernel_size % 2 == 0:  # Check if the number is even
+        kernel_size -= 1  # Subtract 1 if it's even
+    data_transforms = transforms.Compose([transforms.RandomResizedCrop(size=size),
+                                          transforms.RandomHorizontalFlip(),
+                                          transforms.RandomApply([color_jitter], p=0.8),
+                                          transforms.RandomGrayscale(p=0.2),
+                                          GaussianBlur(kernel_size=kernel_size),
+                                          transforms.ToTensor()])
+    return data_transforms
+
+
+class DatasetForSimCLRStyleTraining(Dataset):
+    def __init__(self, args, split, length, transform=None):
+        # Initialize paths and dataset type based on configuration
+        if hasattr(args.model_config, "dataset") and args.model_config.dataset == "bioscan_5m":
+            self.hdf5_inputs_path = (args.bioscan_5m_data.path_to_smaller_hdf5_data
+                                     if hasattr(args.model_config,
+                                                "train_with_small_subset") and args.model_config.train_with_small_subset
+                                     else args.bioscan_5m_data.path_to_hdf5_data)
+            self.dataset = "bioscan_5m"
+        else:
+            self.hdf5_inputs_path = args.bioscan_data.path_to_hdf5_data
+            self.dataset = "bioscan_1m"
+
+        self.split = split
+        self.transform = get_simclr_pipeline_transform(size=224)
+        self.length = length
+
+    def __len__(self):
+        return self.length
+
+    def _open_hdf5(self):
+        # Open the HDF5 file and access the split group
+        self.hdf5_split_group = h5py.File(self.hdf5_inputs_path, "r", libver="latest")[self.split]
+
+    def load_image(self, idx):
+        # Load an image from HDF5 file
+        image_enc_padded = self.hdf5_split_group["image"][idx].astype(np.uint8)
+        enc_length = self.hdf5_split_group["image_mask"][idx]
+        image_enc = image_enc_padded[:enc_length]
+        curr_image = Image.open(io.BytesIO(image_enc))
+        return curr_image
+
+    def __getitem__(self, idx):
+        if not hasattr(self, 'hdf5_split_group'):
+            self._open_hdf5()
+        # Fetch the image and apply transformations to create a positive pair
+        image = self.load_image(idx)
+        transformed_image = self.transform(image)
+        transformed_image2 = self.transform(image)
+        return transformed_image, transformed_image2
 
 
 def get_len_dict(args):
@@ -815,7 +881,6 @@ class INSECTDataset(Dataset):
         # self.images = INSECTDataset.compile_images(image_folder)
         self.images = image_hdf5_path
         self.for_open_clip = for_open_clip
-
 
         if self.for_training:
             if self.for_open_clip:

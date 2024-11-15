@@ -551,7 +551,7 @@ def main(args: DictConfig) -> None:
         folder_for_saving, f"extracted_feature_from_{args.inference_and_eval_setting.eval_on}_split.hdf5"
     )
 
-    if os.path.exists(extracted_features_path) and os.path.exists(labels_path) and args.load_inference:
+    if os.path.exists(extracted_features_path) and os.path.exists(labels_path) and os.path.exists(processed_id_path) and args.load_inference:
         print("Loading embeddings from file...")
 
         with h5py.File(extracted_features_path, "r") as hdf5_file:
