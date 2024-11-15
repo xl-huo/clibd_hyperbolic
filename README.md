@@ -211,11 +211,15 @@ python scripts/flattenCsv.pya -i PATH_TO_RESULTS_CSV -o PATH_TO_FLATTEN_CSV
 # Citing CLIBD
 If you use CLIBD in your research, please cite:
 ```bibtex
-@article{gong2024bioscan,
-  title={CLIBD: Bridging Vision and Genomics for Biodiversity Monitoring at Scale},
-  author={Gong, ZeMing and Wang, Austin T and Haurum, Joakim Bruslund and Lowe, Scott C and Taylor, Graham W and Chang, Angel X},
+@article{gong2024clibd,
+  title={{CLIBD}: Bridging Vision and Genomics for Biodiversity Monitoring at Scale},
+  author={Gong, ZeMing and Wang, Austin T. and Huo, Xiaoliang and Haurum, Joakim Bruslund and Lowe, Scott C. and Taylor, Graham W. and Chang, Angel X.},
   journal={arXiv preprint arXiv:2405.17537},
-  year={2024}
+  year={2024},
+  eprint={2405.17537},
+  archivePrefix={arXiv},
+  primaryClass={cs.AI},
+  doi={10.48550/arxiv.2405.17537},
 }
 ```
 
