@@ -45,6 +45,7 @@ def main_process(rank: int, world_size: int, args):
                 shuffle=True)
 
     model = load_vit_for_simclr_training(args, device=None)
+    model = model.to(rank)
     model = DDP(model, device_ids=[rank], find_unused_parameters=True)
 
     optimizer = torch.optim.Adam(model.parameters(), args.model_config.lr_config.lr,
