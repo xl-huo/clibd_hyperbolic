@@ -142,7 +142,7 @@ class SimCLR(object):
                 wandb.log({"epoch_loss": epoch_loss_avg, "epoch": epoch_counter})
 
             # warmup for the first 10 epochs
-            if epoch_counter >= 10:
+            if epoch_counter >= 2:
                 self.scheduler.step()
             if rank == 0:
                 print(f"Epoch: {epoch_counter}\tLoss: {epoch_loss_avg:.4f}\tTop1 accuracy: {top1[0]}")
