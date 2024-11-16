@@ -134,8 +134,8 @@ class SimCLR(object):
                                    "n_iter": n_iter})
 
                 n_iter += 1
-
-                pbar.set_description(f"Epoch: {epoch_counter}. Loss: {loss:.4f}.")
+                if rank == 0:
+                    pbar.set_description(f"Epoch: {epoch_counter}. Loss: {loss:.4f}.")
 
             epoch_loss_avg = sum(epoch_loss) / len(epoch_loss)
             if rank == 0:
