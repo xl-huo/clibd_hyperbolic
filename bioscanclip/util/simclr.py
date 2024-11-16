@@ -91,17 +91,22 @@ class SimCLR(object):
         logits = logits / self.args.model_config.temperature
         return logits, labels
 
-    def train(self, train_loader):
+    def train(self, train_loader, rank=0):
         scaler = GradScaler(enabled=True)
-
-        wandb.init(project="CLIBD-simclr", name=self.args.model_config.model_output_name)
+        if rank == 0:
+            wandb.init(project="CLIBD-simclr", name=self.args.model_config.model_output_name)
 
         n_iter = 0
-        print(f"Start SimCLR training for {self.args.model_config.epochs} epochs.")
+
+        if rank == 0:
+           print(f"Start SimCLR training for {self.args.model_config.epochs} epochs.")
         best_loss = None
 
         for epoch_counter in range(self.args.model_config.epochs):
-            pbar = tqdm(train_loader, total=len(train_loader))
+            if rank == 0:
+                pbar = tqdm(train_loader, total=len(train_loader))
+            else:
+                pbar = train_loader
             epoch_loss = []
             for images_1, images_2 in pbar:
                 images = torch.cat([images_1, images_2], dim=0)
@@ -137,7 +142,8 @@ class SimCLR(object):
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
                 self.scheduler.step()
-            print(f"Epoch: {epoch_counter}\tLoss: {epoch_loss_avg:.4f}\tTop1 accuracy: {top1[0]}")
+            if rank == 0:
+                print(f"Epoch: {epoch_counter}\tLoss: {epoch_loss_avg:.4f}\tTop1 accuracy: {top1[0]}")
             checkpoint_name = 'checkpoint_{:04d}.pth.tar'.format(self.args.model_config.epochs)
 
             is_best = False
@@ -154,6 +160,7 @@ class SimCLR(object):
                     'state_dict': self.model.state_dict(),
                     'optimizer': self.optimizer.state_dict(),
                 }, is_best=is_best, filename=checkpoint_name)
-            print(f"Metadata has been saved at {wandb.run.dir}.")
-        print("Training has finished.")
-
+            if rank == 0:
+                print(f"Metadata has been saved at {wandb.run.dir}.")
+        if rank == 0:
+            print("Training has finished.")
