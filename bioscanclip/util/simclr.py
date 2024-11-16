@@ -129,8 +129,9 @@ class SimCLR(object):
 
                 if n_iter % self.args.model_config.log_every_n_steps == 0:
                     top1, _ = accuracy(logits, labels, topk=(1, 5))
-                    wandb.log({"loss": loss, "acc/top1": top1[0], "learning_rate": self.scheduler.get_lr()[0],
-                               "n_iter": n_iter})
+                    if rank == 0:
+                        wandb.log({"loss": loss, "acc/top1": top1[0], "learning_rate": self.scheduler.get_last_lr()[0],
+                                   "n_iter": n_iter})
 
                 n_iter += 1
 
