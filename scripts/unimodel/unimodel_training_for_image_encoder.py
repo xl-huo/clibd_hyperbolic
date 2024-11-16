@@ -52,9 +52,9 @@ def main_process(rank: int, world_size: int, args):
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                            last_epoch=-1)
-
-    simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, device=rank, args=args)
-    simclr.train(train_loader)
+    with torch.cuda.device(rank):
+        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, device=rank, args=args)
+        simclr.train(train_loader)
 
 
 @hydra.main(config_path="../../bioscanclip/config", config_name="global_config", version_base="1.1")
