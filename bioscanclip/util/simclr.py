@@ -138,7 +138,8 @@ class SimCLR(object):
                 pbar.set_description(f"Epoch: {epoch_counter}. Loss: {loss:.4f}.")
 
             epoch_loss_avg = sum(epoch_loss) / len(epoch_loss)
-            wandb.log({"epoch_loss": epoch_loss_avg, "epoch": epoch_counter})
+            if rank == 0:
+                wandb.log({"epoch_loss": epoch_loss_avg, "epoch": epoch_counter})
 
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
