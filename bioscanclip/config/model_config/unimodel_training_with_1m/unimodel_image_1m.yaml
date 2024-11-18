@@ -10,6 +10,11 @@ image:
 
 model_output_name: image_simclr_style_bioscan_1m
 port: 29531
+
+ckpt_path: ${project_root_path}/ckpt/uni_model/uni_model/image/${model_config.model_output_name}/model_best.pth.tar
+
+output_dim: 768
+
 #
 #lr_scheduler: one_cycle
 lr_config:

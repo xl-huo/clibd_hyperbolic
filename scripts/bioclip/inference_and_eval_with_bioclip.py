@@ -9,13 +9,15 @@ import torch
 from omegaconf import DictConfig
 from tqdm import tqdm
 
-from inference_and_eval_with_bioclip_with_image_to_image import compute_accuracy
 from bioscanclip.util.dataset import load_dataloader, load_bioscan_dataloader_with_train_seen_and_separate_keys, \
     load_bioscan_dataloader_all_small_splits
 import open_clip
 import torch.nn.functional as F
+from collections import defaultdict
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 
 openai_templates = [
     lambda c: f"a bad photo of a {c}.",
@@ -100,6 +102,31 @@ openai_templates = [
     lambda c: f"a tattoo of the {c}.",
 ]
 
+def make_image_key_features(model, all_keys_dataloader):
+    key_labels = {}
+    with torch.no_grad():
+        key_features = []
+        autocast = get_autocast("amp")
+        pbar = tqdm(all_keys_dataloader)
+        for batch in pbar:
+            pbar.set_description("Encode key feature...")
+            file_name_batch, image_input_batch, dna_batch, input_ids, token_type_ids, attention_mask, label_batch = batch
+            image_input_batch = image_input_batch.to(DEVICE)
+            with autocast():
+                image_features = model.encode_image(image_input_batch)
+                image_features = F.normalize(image_features, dim=-1)
+            image_features = image_features.to("cpu")
+            for image_feature in image_features:
+                # print(image_feature.shape)
+                # exit()
+                key_features.append(image_feature)
+            for key in label_batch.keys():
+                if key not in key_labels:
+                    key_labels[key] = []
+                key_labels[key] = key_labels[key] + label_batch[key]
+
+        key_features = torch.stack(key_features, dim=1).to(DEVICE)
+    return key_features, key_labels
 
 def make_txt_features(model, classnames, templates):
     tokenizer = open_clip.get_tokenizer("hf-hub:imageomics/bioclip")
@@ -116,12 +143,6 @@ def make_txt_features(model, classnames, templates):
         txt_features = torch.stack(txt_features, dim=1).to(DEVICE)
     return txt_features
 
-
-def make_prediction(output, target, topk=(1,)):
-    pred = output.topk(max(topk), 1, True, True)[1]
-    return pred.cpu().tolist(), target.cpu().tolist()
-
-
 def get_all_unique_species_from_dataloader(dataloader):
     all_species = []
     species_to_other = {}
@@ -136,7 +157,13 @@ def get_all_unique_species_from_dataloader(dataloader):
 
     all_species = list(set(all_species))
     all_species.sort()
-    return all_species, species_to_other
+
+    all_labels_in_dict = []
+
+    for species in all_species:
+        all_labels_in_dict.append(species_to_other[species])
+
+    return all_species, all_labels_in_dict
 
 
 def get_autocast(precision):
@@ -148,40 +175,81 @@ def get_autocast(precision):
     else:
         return contextlib.suppress
 
+def make_prediction(logits, key_labels, topk=(1,)):
+    pred_index = logits.topk(max(topk), dim=1).indices
+    prediction = [key_labels[label] for label in pred_index]
+    return prediction
 
-def encode_image_feature_and_calculate_accuracy(model, txt_features, query_dataloader, all_species):
-    # for image feature
+def calculate_macro_accuracy(all_pred_labels, all_gt_labels):
+
+    levels = ['order', 'family', 'genus', 'species']
+    correct_counts = {level: defaultdict(int) for level in levels}
+    total_counts = {level: defaultdict(int) for level in levels}
+
+    for pred, gt in zip(all_pred_labels, all_gt_labels):
+        for level in levels:
+            if pred[level] == gt[level]:
+                correct_counts[level][gt[level]] += 1
+            total_counts[level][gt[level]] += 1
+
+    macro_accuracies = {}
+    for level in levels:
+        level_accuracies = [correct_counts[level][cls] / total_counts[level][cls]
+                            for cls in total_counts[level]]
+        macro_accuracies[level] = sum(level_accuracies) / len(level_accuracies) if level_accuracies else 0
+
+    return macro_accuracies
+
+def process_all_gt_labels(all_gt_labels):
+    all_gt_labels_in_list = []
+    total_len = len(all_gt_labels['species'])
+    for idx in range(total_len):
+        curr_labels = {}
+        for key in all_gt_labels.keys():
+            curr_labels[key] = all_gt_labels[key][idx]
+        all_gt_labels_in_list.append(curr_labels)
+    return all_gt_labels_in_list
+
+
+def encode_image_features_and_make_prediction(model, query_dataloader, key_features, key_labels):
     autocast = get_autocast("amp")
-    pbar = tqdm(query_dataloader)
-    all_pred = []
-    all_gt = []
+
+    pbar = tqdm(query_dataloader, desc="Encoding image features...")
+    all_pred_labels = []
+    all_gt_labels = {}
     for batch in pbar:
-        pbar.set_description("Encode image feature...")
         file_name_batch, image_input_batch, dna_batch, input_ids, token_type_ids, attention_mask, label_batch = batch
-
-        targets = torch.tensor([all_species.index(species) for species in label_batch['species']]).to(DEVICE)
-
+        for key in label_batch.keys():
+            if key not in all_gt_labels:
+                all_gt_labels[key] = []
+            all_gt_labels[key] = all_gt_labels[key] + label_batch[key]
         image_input_batch = image_input_batch.to(DEVICE)
         with autocast():
             image_features = model.encode_image(image_input_batch)
             image_features = F.normalize(image_features, dim=-1)
-            logits = model.logit_scale.exp() * image_features @ txt_features
+            logits = model.logit_scale.exp() * image_features @ key_features
 
-        # Measure accuracy
-        pred, target = make_prediction(logits, targets, topk=(1, 3, 5))
-        all_pred = all_pred + pred
-        all_gt = all_gt + target
+        # based on the logits, make prediction
+        pred = make_prediction(logits, key_labels, topk=(1,))
+        all_pred_labels = all_pred_labels + pred
 
-    compute_accuracy(all_pred, all_gt)
 
+    all_gt_labels = process_all_gt_labels(all_gt_labels)
+    macro_accuracies = calculate_macro_accuracy(all_pred_labels, all_gt_labels)
+    return macro_accuracies
+
+def harmonic_mean(numbers):
+    if any(n == 0 for n in numbers):
+        raise ValueError("All numbers must be non-zero.")
+
+    num_count = len(numbers)
+    inverse_sum = sum(1 / n for n in numbers)
+
+    return num_count / inverse_sum
 
 @hydra.main(config_path="../../bioscanclip/config", config_name="global_config", version_base="1.1")
 def main(args: DictConfig) -> None:
     args.save_inference = True
-    if os.path.exists(os.path.join(args.model_config.ckpt_path, "best.pth")):
-        args.model_config.ckpt_path = os.path.join(args.model_config.ckpt_path, "best.pth")
-    elif os.path.exists(os.path.join(args.model_config.ckpt_path, "last.pth")):
-        args.model_config.ckpt_path = os.path.join(args.model_config.ckpt_path, "last.pth")
 
     folder_for_saving = os.path.join(
         args.visualization.output_dir, args.model_config.model_output_name, "features_and_prediction"
@@ -201,16 +269,33 @@ def main(args: DictConfig) -> None:
         args)
     _, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
 
-    all_species, species_to_other = get_all_unique_species_from_dataloader(all_keys_dataloader)
-    classnames = [name.replace("_", " ") for name in all_species]
-    txt_features_of_all_species = make_txt_features(model, classnames, openai_templates)
+    txt_features_path = os.path.join(folder_for_saving, "txt_features.pth")
+    labels_dict_path = os.path.join(folder_for_saving, "labels_dict.pth")
+    all_species, all_labels_in_dict = get_all_unique_species_from_dataloader(all_keys_dataloader)
 
-    print("For seen test: ")
-    encode_image_feature_and_calculate_accuracy(model, txt_features_of_all_species, seen_test_dataloader, all_species)
-    print()
+    if os.path.exists(txt_features_path) and os.path.exists(labels_dict_path):
+        txt_features_of_all_species = torch.load(txt_features_path)
+        all_labels_in_dict = torch.load(labels_dict_path)
+    else:
+        classnames = [name.replace("_", " ") for name in all_species]
+        txt_features_of_all_species = make_txt_features(model, classnames, openai_templates)
+        torch.save(txt_features_of_all_species, txt_features_path)
+        torch.save(all_labels_in_dict, labels_dict_path)
 
-    print("For unseen test: ")
-    encode_image_feature_and_calculate_accuracy(model, txt_features_of_all_species, unseen_test_dataloader, all_species)
+    text_dict = {'features': txt_features_of_all_species, 'labels': all_labels_in_dict}
+    seen_macro_accuracies = encode_image_features_and_make_prediction(model, seen_test_dataloader,  text_dict['features'], text_dict['labels'])
+
+
+    unseen_macro_accuracies = encode_image_features_and_make_prediction(model, unseen_test_dataloader, text_dict['features'], text_dict['labels'])
+
+    print("For image to text: ")
+    for level in ['order', 'family', 'genus', 'species']:
+        print(f"Level: {level}")
+        seen_acc = seen_macro_accuracies[level]
+        unseen_acc = unseen_macro_accuracies[level]
+        harmoinc_mean_acc = harmonic_mean([seen_acc, unseen_acc])
+        print(f"Seen acc：{seen_acc} || Unseen acc：{unseen_acc} || Harmonic mean acc：{harmoinc_mean_acc}")
+        print(f"{round(seen_acc*100, 1)} & {round(unseen_acc*100, 1)} & {round(harmoinc_mean_acc*100, 1)}")
 
 
 if __name__ == "__main__":

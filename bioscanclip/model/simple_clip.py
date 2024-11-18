@@ -136,6 +136,30 @@ def load_vit_for_simclr_training(args, device=None):
     return pre_trained_timm_vit
 
 
+def wrap_vit_into_simple_clip(args, vit, device=None):
+    torch.cuda.empty_cache()
+    # Either we have the small models
+    image_encoder = None
+    dna_encoder = None
+    language_encoder = None
+    open_clip_model = None
+
+    disable_lora = True
+
+    image_encoder = vit
+
+    model = SimpleCLIP(image_encoder=image_encoder, dna_encoder=dna_encoder,
+                       language_encoder=language_encoder, open_clip_model=open_clip_model)
+
+    if device is not None:
+        model.to(device)
+
+    if disable_lora:
+        for param in model.parameters():
+            param.requires_grad = True
+
+    return model
+
 
 def load_clip_model(args, device=None):
     torch.cuda.empty_cache()

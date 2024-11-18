@@ -393,11 +393,11 @@ def construct_dataloader(
     barcode_bert_dna_tokens = None
     # For now, just use sequence, but not feature.
     image_type = "image"
-    if hasattr(args.model_config, "image"):
+    if hasattr(args.model_config, "image") and hasattr(args.model_config.image, "input_type"):
         image_type = args.model_config.image.input_type
 
     dna_type = "sequence"
-    if hasattr(args.model_config, "dna"):
+    if hasattr(args.model_config, "dna") and hasattr(args.model_config.dna, "input_type"):
         dna_type = args.model_config.dna.input_type
 
     if dna_type == "sequence":
