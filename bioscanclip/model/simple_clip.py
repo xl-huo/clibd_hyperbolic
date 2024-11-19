@@ -213,6 +213,10 @@ def load_clip_model(args, device=None):
                 state_dict = checkpoint['state_dict']
                 state_dict = remove_module_from_state_dict(state_dict)
                 pre_trained_timm_vit.load_state_dict(state_dict)
+
+                # Free cuda memory for state_dict
+                del state_dict
+                torch.cuda.empty_cache()
                 print("Loaded image encoder from %s" % image_encoder_trained_with_simclr_style_ckpt_path)
 
             # pre_trained_timm_vit = timm.create_model('vit_base_patch16_224', pretrained=True)
