@@ -216,6 +216,7 @@ def load_clip_model(args, device=None):
 
                 # Free cuda memory for state_dict
                 del state_dict
+                del checkpoint
                 torch.cuda.empty_cache()
                 print("Loaded image encoder from %s" % image_encoder_trained_with_simclr_style_ckpt_path)
 
