@@ -219,7 +219,9 @@ def load_clip_model(args, device=None):
                 del checkpoint
                 torch.cuda.empty_cache()
                 print("Loaded image encoder from %s" % image_encoder_trained_with_simclr_style_ckpt_path)
-
+            # Check the memory usage of the image encoder
+            print(torch.cuda.memory_summary(device=None, abbreviated=False))
+            exit()
             # pre_trained_timm_vit = timm.create_model('vit_base_patch16_224', pretrained=True)
             if disable_lora:
                 image_encoder = LoRA_ViT_timm(vit_model=pre_trained_timm_vit, r=4,
