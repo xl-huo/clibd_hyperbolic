@@ -1,4 +1,4 @@
-batch_size: 500
+batch_size: 490
 epochs: 30
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-small_experiments
@@ -21,7 +21,7 @@ evaluation_period: 1
 ckpt_path: ${project_root_path}/ckpt/bioscan_clip/final_experiments/image_dna_text_4gpu_50epoch/best.pth
 
 output_dim: 768
-port: 8001
+port: 12355
 
 disable_lora: true
 lr_scheduler: one_cycle
