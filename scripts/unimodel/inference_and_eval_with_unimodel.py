@@ -8,16 +8,12 @@ from omegaconf import DictConfig
 from bioscanclip.model.simple_clip import load_vit_for_simclr_training, wrap_vit_into_simple_clip
 from bioscanclip.util.dataset import DatasetForSimCLRStyleTraining, prepare, load_bioscan_dataloader_all_small_splits
 from bioscanclip.util.simclr import SimCLR
-from bioscanclip.util.util import set_seed, get_features_and_label, All_TYPE_OF_FEATURES_OF_KEY, inference_and_print_result
+from bioscanclip.util.util import set_seed, get_features_and_label, All_TYPE_OF_FEATURES_OF_KEY, inference_and_print_result, remove_module_from_state_dict
 from torch.nn.parallel import DistributedDataParallel as DDP
 import json
 
 
-def remove_module_from_state_dict(state_dict):
-    new_state_dict = {}
-    for key, value in state_dict.items():
-        new_state_dict[key.replace("module.", "")] = value
-    return new_state_dict
+
 
 def main_process(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

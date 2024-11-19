@@ -801,3 +801,9 @@ def load_image_from_hdf5_with_id_as_input(args, data_id, id_to_split_and_positio
         image_enc = image_enc_padded[:enc_length]
         image = Image.open(io.BytesIO(image_enc))
         return image.resize((256, 256))
+
+def remove_module_from_state_dict(state_dict):
+    new_state_dict = {}
+    for key, value in state_dict.items():
+        new_state_dict[key.replace("module.", "")] = value
+    return new_state_dict

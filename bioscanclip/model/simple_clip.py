@@ -10,6 +10,7 @@ import numpy as np
 from typing import Optional
 import torch
 import open_clip
+from bioscanclip.util.util import remove_module_from_state_dict
 
 
 class SimpleCLIP(nn.Module):
@@ -206,6 +207,13 @@ def load_clip_model(args, device=None):
             if hasattr(args.model_config.image, 'pre_train_model'):
                 image_model_name = args.model_config.image.pre_train_model
             pre_trained_timm_vit = timm.create_model(image_model_name, pretrained=True)
+            if hasattr(args.model_config.image, 'image_encoder_trained_with_simclr_style_ckpt_path'):
+                image_encoder_trained_with_simclr_style_ckpt_path = args.model_config.image.image_encoder_trained_with_simclr_style_ckpt_path
+                checkpoint = torch.load(image_encoder_trained_with_simclr_style_ckpt_path)
+                state_dict = checkpoint['state_dict']
+                state_dict = remove_module_from_state_dict(state_dict)
+                pre_trained_timm_vit.load_state_dict(state_dict)
+                print("Loaded image encoder from %s" % image_encoder_trained_with_simclr_style_ckpt_path)
 
             # pre_trained_timm_vit = timm.create_model('vit_base_patch16_224', pretrained=True)
             if disable_lora:
