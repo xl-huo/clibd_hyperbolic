@@ -27,6 +27,7 @@ lr_config:
   lr: 1e-6
   max_lr: 5e-5
 
+for_open_clip: true
 for_bio_clip: true
 all_gather: true
 loss_setup:
