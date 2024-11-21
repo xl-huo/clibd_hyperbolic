@@ -16,6 +16,90 @@ from collections import defaultdict
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+
+openai_templates = [
+    lambda c: f"a bad photo of a {c}.",
+    lambda c: f"a photo of many {c}.",
+    lambda c: f"a sculpture of a {c}.",
+    lambda c: f"a photo of the hard to see {c}.",
+    lambda c: f"a low resolution photo of the {c}.",
+    lambda c: f"a rendering of a {c}.",
+    lambda c: f"graffiti of a {c}.",
+    lambda c: f"a bad photo of the {c}.",
+    lambda c: f"a cropped photo of the {c}.",
+    lambda c: f"a tattoo of a {c}.",
+    lambda c: f"the embroidered {c}.",
+    lambda c: f"a photo of a hard to see {c}.",
+    lambda c: f"a bright photo of a {c}.",
+    lambda c: f"a photo of a clean {c}.",
+    lambda c: f"a photo of a dirty {c}.",
+    lambda c: f"a dark photo of the {c}.",
+    lambda c: f"a drawing of a {c}.",
+    lambda c: f"a photo of my {c}.",
+    lambda c: f"the plastic {c}.",
+    lambda c: f"a photo of the cool {c}.",
+    lambda c: f"a close-up photo of a {c}.",
+    lambda c: f"a black and white photo of the {c}.",
+    lambda c: f"a painting of the {c}.",
+    lambda c: f"a painting of a {c}.",
+    lambda c: f"a pixelated photo of the {c}.",
+    lambda c: f"a sculpture of the {c}.",
+    lambda c: f"a bright photo of the {c}.",
+    lambda c: f"a cropped photo of a {c}.",
+    lambda c: f"a plastic {c}.",
+    lambda c: f"a photo of the dirty {c}.",
+    lambda c: f"a jpeg corrupted photo of a {c}.",
+    lambda c: f"a blurry photo of the {c}.",
+    lambda c: f"a photo of the {c}.",
+    lambda c: f"a good photo of the {c}.",
+    lambda c: f"a rendering of the {c}.",
+    lambda c: f"a {c} in a video game.",
+    lambda c: f"a photo of one {c}.",
+    lambda c: f"a doodle of a {c}.",
+    lambda c: f"a close-up photo of the {c}.",
+    lambda c: f"a photo of a {c}.",
+    lambda c: f"the origami {c}.",
+    lambda c: f"the {c} in a video game.",
+    lambda c: f"a sketch of a {c}.",
+    lambda c: f"a doodle of the {c}.",
+    lambda c: f"a origami {c}.",
+    lambda c: f"a low resolution photo of a {c}.",
+    lambda c: f"the toy {c}.",
+    lambda c: f"a rendition of the {c}.",
+    lambda c: f"a photo of the clean {c}.",
+    lambda c: f"a photo of a large {c}.",
+    lambda c: f"a rendition of a {c}.",
+    lambda c: f"a photo of a nice {c}.",
+    lambda c: f"a photo of a weird {c}.",
+    lambda c: f"a blurry photo of a {c}.",
+    lambda c: f"a cartoon {c}.",
+    lambda c: f"art of a {c}.",
+    lambda c: f"a sketch of the {c}.",
+    lambda c: f"a embroidered {c}.",
+    lambda c: f"a pixelated photo of a {c}.",
+    lambda c: f"itap of the {c}.",
+    lambda c: f"a jpeg corrupted photo of the {c}.",
+    lambda c: f"a good photo of a {c}.",
+    lambda c: f"a plushie {c}.",
+    lambda c: f"a photo of the nice {c}.",
+    lambda c: f"a photo of the small {c}.",
+    lambda c: f"a photo of the weird {c}.",
+    lambda c: f"the cartoon {c}.",
+    lambda c: f"art of the {c}.",
+    lambda c: f"a drawing of the {c}.",
+    lambda c: f"a photo of the large {c}.",
+    lambda c: f"a black and white photo of a {c}.",
+    lambda c: f"the plushie {c}.",
+    lambda c: f"a dark photo of a {c}.",
+    lambda c: f"itap of a {c}.",
+    lambda c: f"graffiti of the {c}.",
+    lambda c: f"a toy {c}.",
+    lambda c: f"itap of my {c}.",
+    lambda c: f"a photo of a cool {c}.",
+    lambda c: f"a photo of a small {c}.",
+    lambda c: f"a tattoo of the {c}.",
+]
+
 def make_image_key_features(model, all_keys_dataloader):
     all_labels_in_dict = {}
     with torch.no_grad():
@@ -25,7 +109,6 @@ def make_image_key_features(model, all_keys_dataloader):
         for batch in pbar:
             pbar.set_description("Encode key feature...")
             file_name_batch, image_input_batch, dna_batch, input_ids, token_type_ids, attention_mask, label_batch = batch
-
             image_input_batch = image_input_batch.to(DEVICE)
             with autocast():
                 image_features = model.encode_image(image_input_batch)
@@ -41,6 +124,42 @@ def make_image_key_features(model, all_keys_dataloader):
     all_labels_in_dict = process_all_gt_labels(all_labels_in_dict)
     return key_features, all_labels_in_dict
 
+def make_txt_features(model, classnames, templates):
+    tokenizer = open_clip.get_tokenizer("hf-hub:imageomics/bioclip")
+    with torch.no_grad():
+        txt_features = []
+        for classname in tqdm(classnames):
+            classname = " ".join(word for word in classname.split("_") if word)
+            texts = [template(classname) for template in templates]  # format with class
+            texts = tokenizer(texts).to(DEVICE)  # tokenize
+            class_embeddings = model.encode_text(texts)
+            class_embedding = F.normalize(class_embeddings, dim=-1).mean(dim=0)
+            class_embedding /= class_embedding.norm()
+            txt_features.append(class_embedding)
+        txt_features = torch.stack(txt_features, dim=1).to(DEVICE)
+    return txt_features
+
+def get_all_unique_species_from_dataloader(dataloader):
+    all_species = []
+    species_to_other = {}
+    for batch in dataloader:
+        file_name_batch, image_input_batch, dna_batch, input_ids, token_type_ids, attention_mask, label_batch = batch
+        all_species = all_species + label_batch['species']
+
+        for idx, species in enumerate(label_batch['species']):
+            if species not in species_to_other.keys():
+                species_to_other[species] = {"order": label_batch['order'][idx], "family": label_batch['family'][idx],
+                                             "genus": label_batch['genus'][idx], 'species': species}
+
+    all_species = list(set(all_species))
+    all_species.sort()
+
+    all_labels_in_dict = []
+
+    for species in all_species:
+        all_labels_in_dict.append(species_to_other[species])
+
+    return all_species, all_labels_in_dict
 
 def make_prediction(logits, key_labels, topk=(1,)):
     pred_index = logits.topk(max(topk), dim=1).indices
@@ -56,61 +175,6 @@ def get_autocast(precision):
     else:
         return contextlib.suppress
 
-def compute_accuracy(predictions, ground_truth):
-    top_1_correct = 0
-    top_3_correct = 0
-    top_5_correct = 0
-    total_samples = len(ground_truth)
-    class_correct_and_total_count = {}
-    for i, truth in enumerate(ground_truth):
-        # Top-1 accuracy check
-        if truth not in class_correct_and_total_count.keys():
-            class_correct_and_total_count[truth] = {'top1_c':0.0, 'top3_c':0.0, 'top5_c':0.0, 'total':0.0}
-        class_correct_and_total_count[truth]['total'] = class_correct_and_total_count[truth]['total'] + 1
-
-        if predictions[i][0] == truth:
-            top_1_correct += 1
-            class_correct_and_total_count[truth]['top1_c'] = class_correct_and_total_count[truth]['top1_c'] + 1
-
-        if truth in predictions[i][0:3]:
-            top_3_correct += 1
-            class_correct_and_total_count[truth]['top3_c'] = class_correct_and_total_count[truth]['top3_c'] + 1
-
-        # Top-5 accuracy check
-        if truth in predictions[i]:
-            top_5_correct += 1
-            class_correct_and_total_count[truth]['top5_c'] = class_correct_and_total_count[truth]['top5_c'] + 1
-
-    # Calculate accuracies
-    top_1_accuracy = top_1_correct / total_samples
-    top_3_accuracy = top_3_correct / total_samples
-    top_5_accuracy = top_5_correct / total_samples
-    print('For micro acc')
-    print(f"Top-1 Accuracy: {top_1_accuracy * 100:.2f}%")
-    print(f"Top-3 Accuracy: {top_3_accuracy * 100:.2f}%")
-    print(f"Top-5 Accuracy: {top_5_accuracy * 100:.2f}%")
-
-    top_1_class_acc_list = []
-    top_3_class_acc_list = []
-    top_5_class_acc_list = []
-
-
-
-    for i in class_correct_and_total_count.keys():
-        top_1_class_acc_list.append(class_correct_and_total_count[i]['top1_c']*1.0/class_correct_and_total_count[i]['total'])
-        top_3_class_acc_list.append(
-            class_correct_and_total_count[i]['top3_c'] * 1.0 /class_correct_and_total_count[i]['total'])
-        top_5_class_acc_list.append(
-            class_correct_and_total_count[i]['top5_c'] * 1.0 /class_correct_and_total_count[i]['total'])
-
-    macro_top_1_accuracy = sum(top_1_class_acc_list) * 1.0 / len(top_1_class_acc_list)
-    macro_top_3_accuracy = sum(top_3_class_acc_list) * 1.0 / len(top_1_class_acc_list)
-    macro_top_5_accuracy = sum(top_5_class_acc_list) * 1.0 / len(top_1_class_acc_list)
-
-    print('For macro acc')
-    print(f"Top-1 Accuracy: {macro_top_1_accuracy * 100:.2f}%")
-    print(f"Top-3 Accuracy: {macro_top_3_accuracy * 100:.2f}%")
-    print(f"Top-5 Accuracy: {macro_top_5_accuracy * 100:.2f}%")
 
 def process_all_gt_labels(all_gt_labels):
     all_gt_labels_in_list = []
@@ -142,6 +206,22 @@ def calculate_macro_accuracy(all_pred_labels, all_gt_labels):
 
     return macro_accuracies
 
+def calculate_micro_accuracy(all_pred_labels, all_gt_labels):
+    levels = ['order', 'family', 'genus', 'species']
+    correct_counts = {level: 0 for level in levels}
+    total_counts = {level: 0 for level in levels}
+
+    for pred, gt in zip(all_pred_labels, all_gt_labels):
+        for level in levels:
+            if pred[level] == gt[level]:
+                correct_counts[level] += 1
+            total_counts[level] += 1
+
+    micro_accuracies = {}
+    for level in levels:
+        micro_accuracies[level] = correct_counts[level] / total_counts[level] if total_counts[level] else 0
+
+    return micro_accuracies
 
 def encode_image_feature_and_calculate_accuracy(model, query_dataloader, key_features, key_labels):
     autocast = get_autocast("amp")
@@ -165,10 +245,11 @@ def encode_image_feature_and_calculate_accuracy(model, query_dataloader, key_fea
         pred = make_prediction(logits, key_labels, topk=(1,))
         all_pred_labels = all_pred_labels + pred
 
+
     all_gt_labels = process_all_gt_labels(all_gt_labels)
     macro_accuracies = calculate_macro_accuracy(all_pred_labels, all_gt_labels)
-    return macro_accuracies
-
+    micro_accuracies = calculate_micro_accuracy(all_pred_labels, all_gt_labels)
+    return macro_accuracies, micro_accuracies
 
 def harmonic_mean(numbers):
     if any(n == 0 for n in numbers):
@@ -198,9 +279,16 @@ def main(args: DictConfig) -> None:
     # Load data
     print("Initialize dataloader...")
     args.model_config.batch_size = 24
-    _, _, _, seen_test_dataloader, unseen_test_dataloader, seen_keys_dataloader, val_unseen_keys_dataloader, test_unseen_keys_dataloader, all_keys_dataloader = load_bioscan_dataloader_all_small_splits(
+    _, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, seen_keys_dataloader, val_unseen_keys_dataloader, test_unseen_keys_dataloader, all_keys_dataloader = load_bioscan_dataloader_all_small_splits(
         args)
     _, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
+
+    if args.eval_on == "test":
+        seen_dataloader = seen_test_dataloader
+        unseen_dataloader = unseen_test_dataloader
+    elif args.eval_on == "val":
+        seen_dataloader = seen_val_dataloader
+        unseen_dataloader = unseen_val_dataloader
 
     image_key_feature_path = os.path.join(folder_for_saving, "image_key_features.pth")
     key_labels_path = os.path.join(folder_for_saving, "key_labels.pth")
@@ -212,9 +300,38 @@ def main(args: DictConfig) -> None:
         torch.save(key_features, image_key_feature_path)
         torch.save(key_labels, key_labels_path)
 
-    seen_macro_accuracies = encode_image_feature_and_calculate_accuracy(model, seen_test_dataloader, key_features, key_labels)
+    txt_features_path = os.path.join(folder_for_saving, "txt_features.pth")
+    labels_dict_path = os.path.join(folder_for_saving, "labels_dict.pth")
+    all_species, all_labels_in_dict = get_all_unique_species_from_dataloader(all_keys_dataloader)
 
-    unseen_macro_accuracies = encode_image_feature_and_calculate_accuracy(model, unseen_test_dataloader, key_features, key_labels)
+    if os.path.exists(txt_features_path) and os.path.exists(labels_dict_path):
+        txt_features_of_all_species = torch.load(txt_features_path)
+        all_labels_in_dict = torch.load(labels_dict_path)
+    else:
+        classnames = [name.replace("_", " ") for name in all_species]
+        txt_features_of_all_species = make_txt_features(model, classnames, openai_templates)
+        torch.save(txt_features_of_all_species, txt_features_path)
+        torch.save(all_labels_in_dict, labels_dict_path)
+
+    text_dict = {'features': txt_features_of_all_species, 'labels': all_labels_in_dict}
+    seen_macro_accuracies, seen_micro_accuracies = encode_image_feature_and_calculate_accuracy(model, seen_dataloader,  text_dict['features'], text_dict['labels'])
+    unseen_macro_accuracies, unseen_micro_dataloader = encode_image_feature_and_calculate_accuracy(model, unseen_dataloader, text_dict['features'], text_dict['labels'])
+
+
+
+    print("For image to text: ")
+    for level in ['order', 'family', 'genus', 'species']:
+        print(f"Level: {level}")
+        seen_acc = seen_macro_accuracies[level]
+        unseen_acc = unseen_macro_accuracies[level]
+        harmoinc_mean_acc = harmonic_mean([seen_acc, unseen_acc])
+        print(f"Seen acc：{seen_acc} || Unseen acc：{unseen_acc} || Harmonic mean acc：{harmoinc_mean_acc}")
+        print(f"{round(seen_acc*100, 1)} & {round(unseen_acc*100, 1)} & {round(harmoinc_mean_acc*100, 1)}")
+
+    seen_macro_accuracies = encode_image_feature_and_calculate_accuracy(model, seen_dataloader, key_features,
+                                                                        key_labels)
+
+    unseen_macro_accuracies = encode_image_feature_and_calculate_accuracy(model, unseen_dataloader, key_features, key_labels)
 
     print("For image to image: ")
     for level in ['order', 'family', 'genus', 'species']:
@@ -224,11 +341,6 @@ def main(args: DictConfig) -> None:
         harmoinc_mean_acc = harmonic_mean([seen_acc, unseen_acc])
         print(f"Seen acc：{seen_acc} || Unseen acc：{unseen_acc} || Harmonic mean acc：{harmoinc_mean_acc}")
         print(f"{round(seen_acc*100, 1)} & {round(unseen_acc*100, 1)} & {round(harmoinc_mean_acc*100, 1)}")
-
-
-
-
-
 
 if __name__ == "__main__":
     main()

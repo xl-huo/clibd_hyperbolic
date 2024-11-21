@@ -12,7 +12,22 @@ from bioscanclip.util.util import set_seed, get_features_and_label, All_TYPE_OF_
 from torch.nn.parallel import DistributedDataParallel as DDP
 import json
 
+def calculate_micro_accuracy(all_pred_labels, all_gt_labels):
+    levels = ['order', 'family', 'genus', 'species']
+    correct_counts = {level: 0 for level in levels}
+    total_counts = {level: 0 for level in levels}
 
+    for pred, gt in zip(all_pred_labels, all_gt_labels):
+        for level in levels:
+            if pred[level] == gt[level]:
+                correct_counts[level] += 1
+            total_counts[level] += 1
+
+    micro_accuracies = {}
+    for level in levels:
+        micro_accuracies[level] = correct_counts[level] / total_counts[level] if total_counts[level] else 0
+
+    return micro_accuracies
 
 
 def main_process(args):
@@ -138,6 +153,10 @@ def main_process(args):
         small_species_list=None,
         k_list=args.inference_and_eval_setting.k_list,
     )
+    path_to_acc_dict = os.path.join(folder_for_saving, f"acc_dict_{args.inference_and_eval_setting.eval_on}.json")
+    with open(path_to_acc_dict, "w") as json_file:
+        json.dump(acc_dict, json_file, indent=4)
+    print(f"Saved acc_dict to {path_to_acc_dict}")
 
 
 

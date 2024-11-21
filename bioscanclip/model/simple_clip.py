@@ -15,13 +15,15 @@ from bioscanclip.util.util import remove_module_from_state_dict
 
 class SimpleCLIP(nn.Module):
     def __init__(self, image_encoder, dna_encoder, language_encoder, open_clip_model=None, init_logit_scale: float = np.log(1 / 0.07),
-                 init_logit_bias: Optional[float] = None):
+                 init_logit_bias: Optional[float] = None, for_bio_clip=False):
         super(SimpleCLIP, self).__init__()
         self.image_encoder = image_encoder
         self.dna_encoder = dna_encoder
         self.language_encoder = language_encoder
         self.open_clip_model = open_clip_model
         self.tokenizer_for_open_clip = open_clip.get_tokenizer('ViT-B-32') if open_clip_model is not None else None
+        if for_bio_clip:
+            self.tokenizer_for_open_clip = open_clip.get_tokenizer('hf-hub:imageomics/bioclip') if open_clip_model is not None else None
         self.logit_scale = nn.Parameter(torch.ones([]) * init_logit_scale)
         if init_logit_bias is not None:
             self.logit_bias = nn.Parameter(torch.ones([]) * init_logit_bias)
@@ -195,11 +197,19 @@ def load_clip_model(args, device=None):
         if hasattr(args.model_config.dna, 'model'):
             dna_model = args.model_config.dna.model
 
+    for_bio_clip = False
+    if hasattr(args.model_config, 'for_bio_clip'):
+        for_bio_clip = args.model_config.for_bio_clip
+
     if using_open_clip or (image_model == "lora_clip_image" and language_model == "lora_clip_text") :
         open_clip_model, _, _ = open_clip.create_model_and_transforms('ViT-L/14', pretrained='commonpool_xl_laion_s13b_b90k')
         open_clip_model.to(device)
         if not disable_lora:
             open_clip_model = add_lora_layer_to_open_clip(open_clip_model, r=4, num_classes=args.model_config.output_dim)
+    elif for_bio_clip:
+        model, _, _ = open_clip.create_model_and_transforms('hf-hub:imageomics/bioclip')
+        tokenizer = open_clip.get_tokenizer('hf-hub:imageomics/bioclip')
+        open_clip_model = model
     else:
         # For image part
         if args.model_config.image.input_type == "image":
@@ -266,7 +276,7 @@ def load_clip_model(args, device=None):
                                      output_dim=args.model_config.output_dim)
 
     model = SimpleCLIP(image_encoder=image_encoder, dna_encoder=dna_encoder,
-                       language_encoder=language_encoder, open_clip_model=open_clip_model)
+                       language_encoder=language_encoder, open_clip_model=open_clip_model, for_bio_clip=for_bio_clip)
 
     if device is not None:
         model.to(device)
@@ -274,5 +284,9 @@ def load_clip_model(args, device=None):
     if disable_lora:
         for param in model.parameters():
             param.requires_grad = True
+
+    if for_bio_clip:
+        for param in model.open_clip_model.parameters():
+            param.requires_grad = False
 
     return model

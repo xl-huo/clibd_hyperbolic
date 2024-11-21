@@ -103,7 +103,7 @@ openai_templates = [
 ]
 
 def make_image_key_features(model, all_keys_dataloader):
-    key_labels = {}
+    all_labels_in_dict = {}
     with torch.no_grad():
         key_features = []
         autocast = get_autocast("amp")
@@ -115,18 +115,16 @@ def make_image_key_features(model, all_keys_dataloader):
             with autocast():
                 image_features = model.encode_image(image_input_batch)
                 image_features = F.normalize(image_features, dim=-1)
-            image_features = image_features.to("cpu")
             for image_feature in image_features:
-                # print(image_feature.shape)
-                # exit()
                 key_features.append(image_feature)
             for key in label_batch.keys():
-                if key not in key_labels:
-                    key_labels[key] = []
-                key_labels[key] = key_labels[key] + label_batch[key]
+                if key not in all_labels_in_dict:
+                    all_labels_in_dict[key] = []
+                all_labels_in_dict[key] = all_labels_in_dict[key] + label_batch[key]
 
         key_features = torch.stack(key_features, dim=1).to(DEVICE)
-    return key_features, key_labels
+    all_labels_in_dict = process_all_gt_labels(all_labels_in_dict)
+    return key_features, all_labels_in_dict
 
 def make_txt_features(model, classnames, templates):
     tokenizer = open_clip.get_tokenizer("hf-hub:imageomics/bioclip")
@@ -165,6 +163,10 @@ def get_all_unique_species_from_dataloader(dataloader):
 
     return all_species, all_labels_in_dict
 
+def make_prediction(logits, key_labels, topk=(1,)):
+    pred_index = logits.topk(max(topk), dim=1).indices
+    prediction = [key_labels[label] for label in pred_index]
+    return prediction
 
 def get_autocast(precision):
     if precision == "amp":
@@ -175,10 +177,16 @@ def get_autocast(precision):
     else:
         return contextlib.suppress
 
-def make_prediction(logits, key_labels, topk=(1,)):
-    pred_index = logits.topk(max(topk), dim=1).indices
-    prediction = [key_labels[label] for label in pred_index]
-    return prediction
+
+def process_all_gt_labels(all_gt_labels):
+    all_gt_labels_in_list = []
+    total_len = len(all_gt_labels['species'])
+    for idx in range(total_len):
+        curr_labels = {}
+        for key in all_gt_labels.keys():
+            curr_labels[key] = all_gt_labels[key][idx]
+        all_gt_labels_in_list.append(curr_labels)
+    return all_gt_labels_in_list
 
 def calculate_macro_accuracy(all_pred_labels, all_gt_labels):
 
@@ -200,18 +208,24 @@ def calculate_macro_accuracy(all_pred_labels, all_gt_labels):
 
     return macro_accuracies
 
-def process_all_gt_labels(all_gt_labels):
-    all_gt_labels_in_list = []
-    total_len = len(all_gt_labels['species'])
-    for idx in range(total_len):
-        curr_labels = {}
-        for key in all_gt_labels.keys():
-            curr_labels[key] = all_gt_labels[key][idx]
-        all_gt_labels_in_list.append(curr_labels)
-    return all_gt_labels_in_list
+def calculate_micro_accuracy(all_pred_labels, all_gt_labels):
+    levels = ['order', 'family', 'genus', 'species']
+    correct_counts = {level: 0 for level in levels}
+    total_counts = {level: 0 for level in levels}
 
+    for pred, gt in zip(all_pred_labels, all_gt_labels):
+        for level in levels:
+            if pred[level] == gt[level]:
+                correct_counts[level] += 1
+            total_counts[level] += 1
 
-def encode_image_features_and_make_prediction(model, query_dataloader, key_features, key_labels):
+    micro_accuracies = {}
+    for level in levels:
+        micro_accuracies[level] = correct_counts[level] / total_counts[level] if total_counts[level] else 0
+
+    return micro_accuracies
+
+def encode_image_feature_and_calculate_accuracy(model, query_dataloader, key_features, key_labels):
     autocast = get_autocast("amp")
 
     pbar = tqdm(query_dataloader, desc="Encoding image features...")
@@ -236,7 +250,8 @@ def encode_image_features_and_make_prediction(model, query_dataloader, key_featu
 
     all_gt_labels = process_all_gt_labels(all_gt_labels)
     macro_accuracies = calculate_macro_accuracy(all_pred_labels, all_gt_labels)
-    return macro_accuracies
+    micro_accuracies = calculate_micro_accuracy(all_pred_labels, all_gt_labels)
+    return macro_accuracies, micro_accuracies
 
 def harmonic_mean(numbers):
     if any(n == 0 for n in numbers):
@@ -252,7 +267,7 @@ def main(args: DictConfig) -> None:
     args.save_inference = True
 
     folder_for_saving = os.path.join(
-        args.visualization.output_dir, args.model_config.model_output_name, "features_and_prediction"
+        args.project_root_path, "extracted_embedding", args.model_config.dataset, args.model_config.model_output_name
     )
     os.makedirs(folder_for_saving, exist_ok=True)
 
@@ -264,11 +279,31 @@ def main(args: DictConfig) -> None:
     model.to(DEVICE)
 
     # Load data
+    print("Initialize dataloader...")
     args.model_config.batch_size = 24
-    _, _, _, seen_test_dataloader, unseen_test_dataloader, seen_keys_dataloader, val_unseen_keys_dataloader, test_unseen_keys_dataloader, all_keys_dataloader = load_bioscan_dataloader_all_small_splits(
+    _, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, seen_keys_dataloader, val_unseen_keys_dataloader, test_unseen_keys_dataloader, all_keys_dataloader = load_bioscan_dataloader_all_small_splits(
         args)
     _, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
 
+    if args.inference_and_eval_setting.eval_on == "test":
+        seen_dataloader = seen_test_dataloader
+        unseen_dataloader = unseen_test_dataloader
+    elif args.inference_and_eval_setting.eval_on == "val":
+        seen_dataloader = seen_val_dataloader
+        unseen_dataloader = unseen_val_dataloader
+    else:
+        raise ValueError("Invalid eval_on setting")
+
+    image_key_feature_path = os.path.join(folder_for_saving, "image_key_features.pth")
+    key_labels_path = os.path.join(folder_for_saving, "key_labels.pth")
+    if os.path.exists(image_key_feature_path) and os.path.exists(key_labels_path):
+        key_features = torch.load(image_key_feature_path)
+        key_labels = torch.load(key_labels_path)
+    else:
+        key_features, key_labels = make_image_key_features(model, all_keys_dataloader)
+        torch.save(key_features, image_key_feature_path)
+        torch.save(key_labels, key_labels_path)
+        
     txt_features_path = os.path.join(folder_for_saving, "txt_features.pth")
     labels_dict_path = os.path.join(folder_for_saving, "labels_dict.pth")
     all_species, all_labels_in_dict = get_all_unique_species_from_dataloader(all_keys_dataloader)
@@ -282,13 +317,13 @@ def main(args: DictConfig) -> None:
         torch.save(txt_features_of_all_species, txt_features_path)
         torch.save(all_labels_in_dict, labels_dict_path)
 
-    text_dict = {'features': txt_features_of_all_species, 'labels': all_labels_in_dict}
-    seen_macro_accuracies = encode_image_features_and_make_prediction(model, seen_test_dataloader,  text_dict['features'], text_dict['labels'])
-
-
-    unseen_macro_accuracies = encode_image_features_and_make_prediction(model, unseen_test_dataloader, text_dict['features'], text_dict['labels'])
-
+    acc_dict = {}
+    acc_dict["encoded_image_feature"] = {}
+    acc_dict["encoded_image_feature"]["encoded_language_feature"] = {}
     print("For image to text: ")
+    text_dict = {'features': txt_features_of_all_species, 'labels': all_labels_in_dict}
+    seen_macro_accuracies, seen_micro_accuracies = encode_image_feature_and_calculate_accuracy(model, seen_dataloader,  text_dict['features'], text_dict['labels'])
+    unseen_macro_accuracies, unseen_micro_dataloader = encode_image_feature_and_calculate_accuracy(model, unseen_dataloader, text_dict['features'], text_dict['labels'])
     for level in ['order', 'family', 'genus', 'species']:
         print(f"Level: {level}")
         seen_acc = seen_macro_accuracies[level]
@@ -296,7 +331,47 @@ def main(args: DictConfig) -> None:
         harmoinc_mean_acc = harmonic_mean([seen_acc, unseen_acc])
         print(f"Seen acc：{seen_acc} || Unseen acc：{unseen_acc} || Harmonic mean acc：{harmoinc_mean_acc}")
         print(f"{round(seen_acc*100, 1)} & {round(unseen_acc*100, 1)} & {round(harmoinc_mean_acc*100, 1)}")
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["seen"] = {}
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["seen"]["micro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["seen"]["micro_acc"]['1'] = seen_micro_accuracies
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["seen"]["macro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["seen"]["macro_acc"]['1'] = seen_macro_accuracies
 
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["unseen"] = {}
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["unseen"]["micro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["unseen"]["micro_acc"]['1'] = unseen_micro_dataloader
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["unseen"]["macro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_language_feature"]["unseen"]["macro_acc"]['1'] = unseen_macro_accuracies
+
+    acc_dict["encoded_image_feature"]["encoded_image_feature"] = {}
+    print("For image to image: ")
+    seen_macro_accuracies, seen_micro_accuracies = encode_image_feature_and_calculate_accuracy(model, seen_dataloader, key_features, key_labels)
+    unseen_macro_accuracies, seen_micro_accuracies = encode_image_feature_and_calculate_accuracy(model, unseen_dataloader, key_features, key_labels)
+    for level in ['order', 'family', 'genus', 'species']:
+        print(f"Level: {level}")
+        seen_acc = seen_macro_accuracies[level]
+        unseen_acc = unseen_macro_accuracies[level]
+        harmoinc_mean_acc = harmonic_mean([seen_acc, unseen_acc])
+        print(f"Seen acc：{seen_acc} || Unseen acc：{unseen_acc} || Harmonic mean acc：{harmoinc_mean_acc}")
+        print(f"{round(seen_acc*100, 1)} & {round(unseen_acc*100, 1)} & {round(harmoinc_mean_acc*100, 1)}")
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["seen"] = {}
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["seen"]["micro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["seen"]["micro_acc"]['1'] = seen_micro_accuracies
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["seen"]["macro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["seen"]["macro_acc"]['1'] = seen_macro_accuracies
+
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["unseen"] = {}
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["unseen"]["micro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["unseen"]["micro_acc"]['1'] = unseen_micro_dataloader
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["unseen"]["macro_acc"] = {}
+    acc_dict["encoded_image_feature"]["encoded_image_feature"]["unseen"]["macro_acc"]['1'] = unseen_macro_accuracies
+
+    path_to_acc_dict = os.path.join(folder_for_saving, f"acc_dict_{args.inference_and_eval_setting.eval_on}.json")
+    if os.path.exists(path_to_acc_dict):
+        os.remove(path_to_acc_dict)
+    with open(path_to_acc_dict, "w") as f:
+        json.dump(acc_dict, f, indent=4)
+    print(f"Saved acc_dict to {path_to_acc_dict}")
 
 if __name__ == "__main__":
     main()
