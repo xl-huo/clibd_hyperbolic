@@ -307,7 +307,8 @@ def main_process(rank: int, world_size: int, args):
                     torch.save(original_model.state_dict(), best_ckpt_path)
                     print(f'Best ckpt: {best_ckpt_path}')
             else:
-                stop_flag[0] = 1
+                if args.enable_early_stopping:
+                    stop_flag[0] = 1
             dict_for_wandb["overall_acc"] = overall_acc
             dict_for_wandb["best_epoch"] = best_epoch
             if args.activate_wandb and rank == 0:
