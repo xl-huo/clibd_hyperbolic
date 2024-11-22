@@ -174,7 +174,7 @@ class ClipLoss(nn.Module):
         for idx_a, feature_a in enumerate(feature_list):
             for idx_b, feature_b in enumerate(feature_list):
                 if bind_to_idx is not None:
-                    if idx_a != bind_to_idx or idx_b != bind_to_idx:
+                    if idx_a != bind_to_idx and idx_b != bind_to_idx:
                         continue
                 if idx_a == idx_b:
                     continue
