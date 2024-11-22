@@ -243,11 +243,15 @@ def main_process(rank: int, world_size: int, args):
             min_lr = scale_learning_rate(lr=min_lr, batch_size=args.model_config.batch_size, world_size=world_size)
             scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=min_lr)
 
+    bind_to = None
+    if hasattr(args.model_config, 'bind_to'):
+        bind_to = args.model_config.bind_to
+
     if all_gather:
         criterion = ClipLoss(local_loss=args.model_config.loss_setup.local_loss,
                              gather_with_grad=args.model_config.loss_setup.gather_with_grad, rank=rank,
                              world_size=world_size, use_horovod=args.model_config.loss_setup.use_horovod,
-                             criterion=nn.CrossEntropyLoss())
+                             criterion=nn.CrossEntropyLoss(), bind_to=bind_to)
     else:
         criterion = ContrastiveLoss(criterion=nn.CrossEntropyLoss(), logit_scale=1 / 0.07)
 

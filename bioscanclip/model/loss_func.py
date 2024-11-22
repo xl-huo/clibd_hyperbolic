@@ -15,13 +15,16 @@ try:
 except ImportError:
     hvd = None
 
+
 def construct_label_metrix(labels):
     matrix = (labels.unsqueeze(0) == labels.unsqueeze(1)).float()
 
     return matrix
 
+
 class ContrastiveLoss(nn.Module):
-    def __init__(self, criterion, logit_scale, local_loss=False, gather_with_grad=False, rank=0, world_size=1, use_horovod=False):
+    def __init__(self, criterion, logit_scale, local_loss=False, gather_with_grad=False, rank=0, world_size=1,
+                 use_horovod=False):
         super(ContrastiveLoss, self).__init__()
         self.criterion = criterion
         self.logit_scale = logit_scale
@@ -58,7 +61,6 @@ class ContrastiveLoss(nn.Module):
                 else:
                     sim_a_b = self.logit_scale * feature_a @ feature_b.T
                     sim_b_a = self.logit_scale * feature_b @ feature_a.T
-
 
                 loss_a_b = self.criterion(sim_a_b, label)
                 loss_b_a = self.criterion(sim_b_a, label)
@@ -103,6 +105,7 @@ def gather_features(
 
     return all_features
 
+
 # Modified from the official OpenCLIP implementation
 class ClipLoss(nn.Module):
 
@@ -115,6 +118,7 @@ class ClipLoss(nn.Module):
             world_size=1,
             use_horovod=False,
             criterion=nn.CrossEntropyLoss(),
+            bind_to=None
     ):
         super().__init__()
         self.local_loss = local_loss
@@ -127,6 +131,8 @@ class ClipLoss(nn.Module):
         # cache state
         self.prev_num_logits = 0
         self.labels = {}
+        self.bind_to = bind_to
+
     def forward(self, image_features, dna_features, text_features, labels, logit_scale, output_dict=False):
         device = image_features.device
         all_image_features = image_features
@@ -155,9 +161,21 @@ class ClipLoss(nn.Module):
             raise ValueError("Too less element for calculating the contrastive loss.")
 
         loss_list = []
+        bind_to_idx = None
+        if self.bind_to is not None:
+            if self.bind_to == "image":
+                bind_to_idx = 0
+            elif self.bind_to == "dna":
+                bind_to_idx = 1
+            elif self.bind_to == "text":
+                bind_to_idx = 2
+
 
         for idx_a, feature_a in enumerate(feature_list):
             for idx_b, feature_b in enumerate(feature_list):
+                if bind_to_idx is not None:
+                    if idx_a != bind_to_idx or idx_b != bind_to_idx:
+                        continue
                 if idx_a == idx_b:
                     continue
                 feature_a = F.normalize(feature_a, p=2, dim=1)

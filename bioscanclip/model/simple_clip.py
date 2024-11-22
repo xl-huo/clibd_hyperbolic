@@ -285,8 +285,27 @@ def load_clip_model(args, device=None):
         for param in model.parameters():
             param.requires_grad = True
 
-    if for_bio_clip:
-        for param in model.open_clip_model.parameters():
-            param.requires_grad = False
+    # if for_bio_clip:
+    #     for param in model.open_clip_model.parameters():
+    #         param.requires_grad = False
 
+    # Freeze based on requirements
+    if hasattr(args.model_config, 'image') and hasattr(args.model_config.image, 'freeze') and args.model_config.image.freeze:
+        if model.image_encoder is not None:
+            for param in model.image_encoder.parameters():
+                param.requires_grad = False
+        elif model.open_clip_model is not None:
+            for param in model.open_clip_model.visual.parameters():
+                param.requires_grad = False
+    if hasattr(args.model_config, 'dna') and hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
+        if model.dna_encoder is not None:
+            for param in model.dna_encoder.parameters():
+                param.requires_grad = False
+    if hasattr(args.model_config, 'language') and hasattr(args.model_config.language, 'freeze') and args.model_config.language.freeze:
+        if model.language_encoder is not None:
+            for param in model.language_encoder.parameters():
+                param.requires_grad = False
+        elif model.open_clip_model is not None:
+            for param in model.open_clip_model.transformer.parameters():
+                param.requires_grad = False
     return model
