@@ -40,11 +40,17 @@ class SimpleCLIP(nn.Module):
             try:
                 dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
             except:
-                print(dna_input)
-                print(type(dna_input))
-                print(dna_input.shape)
-                print(dna_input.dtype)
-                exit()
+                # print(dna_input)
+                # print(type(dna_input))
+                # print(dna_input.shape)
+                # print(dna_input.dtype)
+                model_output = self.dna_encoder(dna_input)
+                print(model_output)
+                print(type(model_output))
+                print(model_output.shape)
+                print(model_output.dtype)
+
+                dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
 
         if self.open_clip_model is not None:
             if image_input is not None:
