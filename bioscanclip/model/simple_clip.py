@@ -37,21 +37,7 @@ class SimpleCLIP(nn.Module):
 
 
         if self.dna_encoder is not None:
-            try:
-                dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
-            except:
-                # print(dna_input)
-                # print(type(dna_input))
-                # print(dna_input.shape)
-                # print(dna_input.dtype)
-                model_output = self.dna_encoder(dna_input)
-                print(model_output)
-                print(type(model_output))
-                print(model_output.shape)
-                print(model_output.dtype)
-                print(self.dna_encoder)
-
-                dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
+            dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
 
         if self.open_clip_model is not None:
             if image_input is not None:
@@ -273,9 +259,24 @@ def load_clip_model(args, device=None):
 
     # For DNA part
     if hasattr(args.model_config, 'dna'):
-        if hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
-            dna_encoder = Freeze_DNA_Encoder()
-        elif args.model_config.dna.input_type == "sequence":
+        # if hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
+        #     dna_encoder = Freeze_DNA_Encoder()
+        # elif args.model_config.dna.input_type == "sequence":
+        #     if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
+        #         pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
+        #             bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
+        #         if disable_lora:
+        #             dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
+        #                                             num_classes=args.model_config.output_dim, lora_layer=[])
+        #         else:
+        #             dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
+        #                                             num_classes=args.model_config.output_dim)
+        # else:
+        #     dna_encoder = MLPEncoder(input_dim=args.model_config.dna.input_dim,
+        #                              hidden_dim=args.model_config.dna.hidden_dim,
+        #                              output_dim=args.model_config.output_dim)
+        #
+        if args.model_config.dna.input_type == "sequence":
             if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
                 pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
                     bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
@@ -289,6 +290,7 @@ def load_clip_model(args, device=None):
             dna_encoder = MLPEncoder(input_dim=args.model_config.dna.input_dim,
                                      hidden_dim=args.model_config.dna.hidden_dim,
                                      output_dim=args.model_config.output_dim)
+
 
     model = SimpleCLIP(image_encoder=image_encoder, dna_encoder=dna_encoder,
                        language_encoder=language_encoder, open_clip_model=open_clip_model, for_bio_clip=for_bio_clip)
