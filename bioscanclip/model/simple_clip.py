@@ -49,6 +49,7 @@ class SimpleCLIP(nn.Module):
                 print(type(model_output))
                 print(model_output.shape)
                 print(model_output.dtype)
+                print(self.dna_encoder)
 
                 dna_output = F.normalize(self.dna_encoder(dna_input), p=2, dim=-1)
 
