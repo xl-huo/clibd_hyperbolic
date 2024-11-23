@@ -20,7 +20,7 @@ language:
   model: lora_bert
   freeze: true
 
-model_output_name: image_dna_text_4gpu_image_bind_style
+model_output_name: image_dna_text_4gpu_image_text_bind_style
 evaluation_period: 1
 ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_dna_text_4gpu_train_dna_bind_style/best.pth
 output_dim: 512
