@@ -118,7 +118,8 @@ class ClipLoss(nn.Module):
             world_size=1,
             use_horovod=False,
             criterion=nn.CrossEntropyLoss(),
-            bind_to=None
+            bind_to=None,
+            no_image_text_loss=False
     ):
         super().__init__()
         self.local_loss = local_loss
@@ -132,6 +133,7 @@ class ClipLoss(nn.Module):
         self.prev_num_logits = 0
         self.labels = {}
         self.bind_to = bind_to
+        self.no_image_text_loss = no_image_text_loss
 
     def forward(self, image_features, dna_features, text_features, labels, logit_scale, output_dict=False):
         device = image_features.device
@@ -177,6 +179,9 @@ class ClipLoss(nn.Module):
                     if idx_a != bind_to_idx and idx_b != bind_to_idx:
                         continue
                 if idx_a == idx_b:
+                    continue
+
+                if self.no_image_text_loss and (idx_a == 0 or idx_b == 0) and (idx_a == 2 or idx_b == 2):
                     continue
                 feature_a = F.normalize(feature_a, p=2, dim=1)
                 feature_b = F.normalize(feature_b, p=2, dim=1)
