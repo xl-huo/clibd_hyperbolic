@@ -5,12 +5,12 @@ wandb_project_name: BIOSCAN-CLIP-small_experiments
 using_train_seen_for_pre_train: true
 dataset: bioscan_1m
 
-bind_to: image
+bind_to: dna
 
 image:
   input_type: image
   model: lora_vit
-  freeze: true
+  freeze: false
 dna:
   input_type: sequence
   model: lora_barcode_bert
@@ -18,11 +18,11 @@ dna:
 language:
   input_type: sequence
   model: lora_bert
-  freeze: true
+  freeze: false
 
-model_output_name: image_dna_text_4gpu_image_bind_style
+model_output_name: image_dna_text_4gpu_train_dna_bind_style_with_dna_unfreeze
 evaluation_period: 1
-ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_dna_text_4gpu_train_dna_bind_style/best.pth
+ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_dna_text_4gpu_image_bind_style/best.pth
 output_dim: 512
 port: 29531
 
