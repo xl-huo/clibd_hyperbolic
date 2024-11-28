@@ -164,7 +164,7 @@ def plot_acc(acc_dict, acc_type, seen_or_unseen, query, key, line_description):
 
     color_legend = ax.legend(color_handles, color_labels, loc='lower left', bbox_to_anchor=(0, 0), fontsize=13)
     ax.add_artist(color_legend)
-    ax.clear()
+
 
     sns.lineplot(data=df, x='Taxonomy Level', y='Accuracy', palette=color_group, dashes=linestyle_group,
                  markers=marker_group, hue='Model', style='Model', legend=False)
