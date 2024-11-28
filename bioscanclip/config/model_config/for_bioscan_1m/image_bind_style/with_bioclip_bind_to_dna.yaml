@@ -1,25 +1,28 @@
-batch_size: 5
+batch_size: 500
 epochs: 30
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-small_experiments
 using_train_seen_for_pre_train: true
 dataset: bioscan_1m
 
+bind_to: dna
+
 image:
   input_type: image
   model: lora_vit
-  freeze: true
+  freeze: false
 dna:
   input_type: sequence
   model: lora_barcode_bert
-  freeze: false
+  freeze: true
 language:
   input_type: sequence
   model: lora_bert
-  freeze: true
-model_output_name: image_dna_text_4gpu_train_with_freeze_bioclip
+  freeze: false
+
+model_output_name: image_dna_text_4gpu_train_dna_bind_style
 evaluation_period: 1
-ckpt_path: ${project_root_path}/ckpt/bioscan_clip/final_experiments/image_dna_text_4gpu_50epoch/best.pth
+ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_dna_text_4gpu_image_bind_style/best.pth
 output_dim: 512
 port: 29531
 

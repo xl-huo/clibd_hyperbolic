@@ -243,11 +243,19 @@ def main_process(rank: int, world_size: int, args):
             min_lr = scale_learning_rate(lr=min_lr, batch_size=args.model_config.batch_size, world_size=world_size)
             scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=min_lr)
 
+    bind_to = None
+    if hasattr(args.model_config, 'bind_to'):
+        bind_to = args.model_config.bind_to
+
+    no_image_text_loss = False
+    if hasattr(args.model_config, 'no_image_text_loss'):
+        no_image_text_loss = args.model_config.no_image_text_loss
+
     if all_gather:
         criterion = ClipLoss(local_loss=args.model_config.loss_setup.local_loss,
                              gather_with_grad=args.model_config.loss_setup.gather_with_grad, rank=rank,
                              world_size=world_size, use_horovod=args.model_config.loss_setup.use_horovod,
-                             criterion=nn.CrossEntropyLoss())
+                             criterion=nn.CrossEntropyLoss(), bind_to=bind_to, no_image_text_loss=no_image_text_loss)
     else:
         criterion = ContrastiveLoss(criterion=nn.CrossEntropyLoss(), logit_scale=1 / 0.07)
 
@@ -307,7 +315,8 @@ def main_process(rank: int, world_size: int, args):
                     torch.save(original_model.state_dict(), best_ckpt_path)
                     print(f'Best ckpt: {best_ckpt_path}')
             else:
-                stop_flag[0] = 1
+                if args.enable_early_stopping:
+                    stop_flag[0] = 1
             dict_for_wandb["overall_acc"] = overall_acc
             dict_for_wandb["best_epoch"] = best_epoch
             if args.activate_wandb and rank == 0:

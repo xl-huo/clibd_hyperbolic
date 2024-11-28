@@ -201,7 +201,7 @@ def load_clip_model(args, device=None):
     if hasattr(args.model_config, 'for_bio_clip'):
         for_bio_clip = args.model_config.for_bio_clip
 
-    if using_open_clip or (image_model == "lora_clip_image" and language_model == "lora_clip_text") :
+    if (using_open_clip or (image_model == "lora_clip_image" and language_model == "lora_clip_text")) and not for_bio_clip:
         open_clip_model, _, _ = open_clip.create_model_and_transforms('ViT-L/14', pretrained='commonpool_xl_laion_s13b_b90k')
         open_clip_model.to(device)
         if not disable_lora:
@@ -210,6 +210,7 @@ def load_clip_model(args, device=None):
         model, _, _ = open_clip.create_model_and_transforms('hf-hub:imageomics/bioclip')
         tokenizer = open_clip.get_tokenizer('hf-hub:imageomics/bioclip')
         open_clip_model = model
+        print("Using BioCLIP model")
     else:
         # For image part
         if args.model_config.image.input_type == "image":
@@ -258,9 +259,24 @@ def load_clip_model(args, device=None):
 
     # For DNA part
     if hasattr(args.model_config, 'dna'):
-        if hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
-            dna_encoder = Freeze_DNA_Encoder()
-        elif args.model_config.dna.input_type == "sequence":
+        # if hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
+        #     dna_encoder = Freeze_DNA_Encoder()
+        # elif args.model_config.dna.input_type == "sequence":
+        #     if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
+        #         pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
+        #             bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
+        #         if disable_lora:
+        #             dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
+        #                                             num_classes=args.model_config.output_dim, lora_layer=[])
+        #         else:
+        #             dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
+        #                                             num_classes=args.model_config.output_dim)
+        # else:
+        #     dna_encoder = MLPEncoder(input_dim=args.model_config.dna.input_dim,
+        #                              hidden_dim=args.model_config.dna.hidden_dim,
+        #                              output_dim=args.model_config.output_dim)
+        #
+        if args.model_config.dna.input_type == "sequence":
             if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
                 pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
                     bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
@@ -275,6 +291,7 @@ def load_clip_model(args, device=None):
                                      hidden_dim=args.model_config.dna.hidden_dim,
                                      output_dim=args.model_config.output_dim)
 
+
     model = SimpleCLIP(image_encoder=image_encoder, dna_encoder=dna_encoder,
                        language_encoder=language_encoder, open_clip_model=open_clip_model, for_bio_clip=for_bio_clip)
 
@@ -285,8 +302,27 @@ def load_clip_model(args, device=None):
         for param in model.parameters():
             param.requires_grad = True
 
-    if for_bio_clip:
-        for param in model.open_clip_model.parameters():
-            param.requires_grad = False
+    # if for_bio_clip:
+    #     for param in model.open_clip_model.parameters():
+    #         param.requires_grad = False
 
+    # Freeze based on requirements
+    if hasattr(args.model_config, 'image') and hasattr(args.model_config.image, 'freeze') and args.model_config.image.freeze:
+        if model.image_encoder is not None:
+            for param in model.image_encoder.parameters():
+                param.requires_grad = False
+        elif model.open_clip_model is not None:
+            for param in model.open_clip_model.visual.parameters():
+                param.requires_grad = False
+    if hasattr(args.model_config, 'dna') and hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
+        if model.dna_encoder is not None:
+            for param in model.dna_encoder.parameters():
+                param.requires_grad = False
+    if hasattr(args.model_config, 'language') and hasattr(args.model_config.language, 'freeze') and args.model_config.language.freeze:
+        if model.language_encoder is not None:
+            for param in model.language_encoder.parameters():
+                param.requires_grad = False
+        elif model.open_clip_model is not None:
+            for param in model.open_clip_model.transformer.parameters():
+                param.requires_grad = False
     return model
