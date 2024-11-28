@@ -190,6 +190,7 @@ def plot_acc(acc_dict, acc_type, seen_or_unseen, query, key, line_description):
     folder = "/local-scratch2/projects/bioscan-clip/plot"
     os.makedirs(folder, exist_ok=True)
     # plt.show()
+
     plt.savefig(os.path.join(folder, file_name))
 
 
@@ -204,8 +205,27 @@ def plot_all_in_one(acc_dict, acc_types, seen_or_unseen_list, query, key, line_d
         ax = axes[plot_order[i][0], plot_order[i][1]]
         df = get_df(acc_dict, acc_type, seen_or_unseen, query, key, line_description)
 
+        if i==3:
+            sns.lineplot(data=df, x='Taxonomy Level', y='Accuracy', palette=color_group, dashes=False,
+                         markers=False, hue='Model', ax=ax, style='Model')
+            handles, labels = ax.get_legend_handles_labels()
+            print(f"labels: {labels}")
+            print(f"handles: {handles}")
+            color_labels = line_description
+            color_handles = handles
+            color_labels[1], color_labels[2] = color_labels[2], color_labels[1]
+            color_handles[1], color_handles[2] = color_handles[2], color_handles[1]
+            color_legend = ax.legend(color_handles, color_labels, loc='lower left', bbox_to_anchor=(0, 0), fontsize=13)
+
+            ax.clear()
+
         sns.lineplot(data=df, x='Taxonomy Level', y='Accuracy', palette=color_group, dashes=linestyle_group,
                      markers=marker_group, hue='Model', style='Model', ax=ax, legend=False)
+        if i==3:
+
+            ax.add_artist(color_legend)
+
+
 
         if acc_type == "macro_acc":
             ax.set_ylabel("Macro Accuracy", fontsize=13)
@@ -221,20 +241,12 @@ def plot_all_in_one(acc_dict, acc_types, seen_or_unseen_list, query, key, line_d
         ax.set_ylim(0, 1)
         ax.tick_params(axis='both', which='major', labelsize=13)
 
-        # handles, labels = ax.get_legend_handles_labels()
-        #
-        # color_labels = line_description
-        # color_handles = handles
-        # color_labels[1], color_labels[2] = color_labels[2], color_labels[1]
-        # color_handles[1], color_handles[2] = color_handles[2], color_handles[1]
-        #
-        # color_legend = ax.legend(color_handles, color_labels, loc='lower center', bbox_to_anchor=(1.2, 0.5),
-        #                          fontsize=13)
-        # if i == 0:
-        #     ax.add_artist(color_legend)
+
+
 
     plt.tight_layout()
     pdf_pages.savefig(fig)
+    print(f"Save to {output_pdf_path}")
     pdf_pages.close()
 
 if __name__ == '__main__':
