@@ -35,26 +35,37 @@ def main_process(rank: int, world_size: int, args):
 
     # Using checkpoint that contrastive fine-tuned on INSECT dataset or not
     # checkpoint = torch.load(args.model_config.insect_ckpt_path, map_location='cuda:0')
+    # use_ckpt_fine_tuned_on_INSECT_dataset = False
+    # if hasattr(args.model_config, 'use_ckpt_fine_tuned_on_INSECT_dataset'):
+    #     use_ckpt_fine_tuned_on_INSECT_dataset = args.model_config.use_ckpt_fine_tuned_on_INSECT_dataset
+    # if use_ckpt_fine_tuned_on_INSECT_dataset:
+    #     checkpoint = torch.load(args.model_config.ckpt_path, map_location='cuda:0')
+    # else:
+    #     checkpoint = torch.load(args.model_config.pretrained_ckpt_path, map_location='cuda:0')
+
+    # For now, just use model without fine-tuned on INSECT dataset
     use_ckpt_fine_tuned_on_INSECT_dataset = False
-    if hasattr(args.model_config, 'use_ckpt_fine_tuned_on_INSECT_dataset'):
-        use_ckpt_fine_tuned_on_INSECT_dataset = args.model_config.use_ckpt_fine_tuned_on_INSECT_dataset
     if use_ckpt_fine_tuned_on_INSECT_dataset:
         checkpoint = torch.load(args.model_config.ckpt_path, map_location='cuda:0')
     else:
-        checkpoint = torch.load(args.model_config.pretrained_ckpt_path, map_location='cuda:0')
+        checkpoint = torch.load(args.model_config.ckpt_path, map_location='cuda:0')
 
 
-
-    model.load_state_dict(checkpoint)
+    if hasattr(args.model_config, 'load_ckpt') and args.model_config.load_ckpt is False:
+        pass
+        print("Do not load checkpoint")
+    else:
+        model.load_state_dict(checkpoint)
+        print("Load checkpoint")
     model = model.to(device)
 
     if use_ckpt_fine_tuned_on_INSECT_dataset:
-        folder = os.path.join(args.project_root_path, f"extracted_embedding/INSECT/finetuned_on_INSECT")
+        folder = os.path.join(args.project_root_path, f"extracted_embedding/INSECT/{args.model_config.model_output_name}/finetuned_on_INSECT")
         os.makedirs(folder, exist_ok=True)
         dna_embed_path = os.path.join(folder, "dna_embedding_from_bioscan_clip.csv")
         image_embed_path = os.path.join(folder, "image_embedding_from_bioscan_clip.csv")
     else:
-        folder = os.path.join(args.project_root_path, f"extracted_embedding/INSECT/trained_on_BIOSCAN_1M")
+        folder = os.path.join(args.project_root_path, f"extracted_embedding/INSECT/{args.model_config.model_output_name}/trained_on_BIOSCAN_1M")
         os.makedirs(folder, exist_ok=True)
         dna_embed_path = os.path.join(folder, "dna_embedding_from_bioscan_clip_no_fine_tuned_on_INSECT.csv")
         image_embed_path = os.path.join(folder, "image_embedding_from_bioscan_clip_no_fine_tuned_on_INSECT.csv")
@@ -73,8 +84,6 @@ def main_process(rank: int, world_size: int, args):
     for i, label in pbar:
         pbar.set_description("Extracting features: ")
         curr_feature = dna_feature[i]
-
-
         if str(label) not in dict_emb.keys():
             dict_emb[str(label)] = []
         dict_emb[str(label)].append(curr_feature)
@@ -93,6 +102,7 @@ def main_process(rank: int, world_size: int, args):
     image_feature = image_feature.T
     print(image_feature.shape)
     np.savetxt(image_embed_path, image_feature, delimiter=",")
+    print(dna_embed_path)
     print(image_embed_path)
 
 
