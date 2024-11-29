@@ -584,6 +584,7 @@ def main(args: DictConfig) -> None:
         unseen_dict["processed_id_list"] = id_dict["unseen_id_list"]
         keys_dict["processed_id_list"] = id_dict["key_id_list"]
         keys_dict["all_processed_id_list"] = id_dict["key_id_list"] + id_dict["key_id_list"] + id_dict["key_id_list"]
+        print("Done loading embeddings from file.")
 
     else:
         # initialize model
@@ -686,10 +687,12 @@ def main(args: DictConfig) -> None:
     )
     with open(per_claSS_acc_path, "w") as json_file:
         json.dump(per_class_acc, json_file, indent=4)
+    print(f"Per class accuracy is saved in {per_claSS_acc_path}")
 
     acc_dict_path = os.path.join(folder_for_saving, f"acc_dict_{args.inference_and_eval_setting.eval_on}.json")
     with open(acc_dict_path, "w") as json_file:
         json.dump(acc_dict, json_file, indent=4)
+    print(f"Accuracy is saved in {acc_dict_path}")
 
     try:
         seen_keys_dataloader
@@ -725,7 +728,7 @@ def main(args: DictConfig) -> None:
                 "Invalid value for eval_on, specify by 'python inference_and_eval.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_ssl_ver_0_1_2.yaml' inference_and_eval_setting.eval_on=test/val'"
             )
 
-    print(f"Per class accuracy is saved in {per_claSS_acc_path}")
+
 
     # seen_final_pred = pred_dict["encoded_image_feature"]["encoded_dna_feature"]["curr_seen_pred_list"]
     # unseen_final_pred = pred_dict["encoded_image_feature"]["encoded_dna_feature"]["curr_unseen_pred_list"]
