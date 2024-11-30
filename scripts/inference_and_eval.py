@@ -694,6 +694,11 @@ def main(args: DictConfig) -> None:
         json.dump(acc_dict, json_file, indent=4)
     print(f"Accuracy is saved in {acc_dict_path}")
 
+    pred_dict_path = os.path.join(folder_for_saving, f"pred_dict_{args.inference_and_eval_setting.eval_on}.json")
+    with open(pred_dict_path, "w") as json_file:
+        json.dump(pred_dict, json_file, indent=4)
+    print(f"Prediction is saved in {pred_dict_path}")
+
     try:
         seen_keys_dataloader
         val_unseen_keys_dataloader
