@@ -97,7 +97,7 @@ def plot_accuracy(acc_dict, output_folder, experiment_name, acc_type='macro_acc'
     plt.close()
 
 if __name__ == '__main__':
-    json_root = '/localhome/zmgong/second_ssd/projects/bioscan-clip/extracted_embedding/bioscan_5m/acc_json'
+    json_root = 'extracted_embedding/bioscan_5m/acc_json'
     list_of_acc_val_json = [
         f"{json_root}/image_dna_text_4gpu/acc_dict_test.json",
         f"{json_root}/image_text_4gpu/acc_dict_test.json",
