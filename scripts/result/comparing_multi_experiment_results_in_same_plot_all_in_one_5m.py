@@ -8,15 +8,15 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 
 color_group = {
-    'I+D+T seen': '#5778a4',
-    'I+D+T unseen': '#5778a4',
-    'I+D+T hmean': '#5778a4',
-    'I+T seen': '#e49444',
-    'I+T unseen': '#e49444',
-    'I+T hmean': '#e49444',
-    'I+D seen': '#6a9f58',
-    'I+D unseen': '#6a9f58',
-    'I+D hmean': '#6a9f58',
+    'Image + DNA + Taxonomy seen': '#5778a4',
+    'Image + DNA + Taxonomy unseen': '#5778a4',
+    'Image + DNA + Taxonomy hmean': '#5778a4',
+    'Image + Taxonomy seen': '#e49444',
+    'Image + Taxonomy unseen': '#e49444',
+    'Image + Taxonomy hmean': '#e49444',
+    'Image + DNA seen': '#6a9f58',
+    'Image + DNA unseen': '#6a9f58',
+    'Image + DNA hmean': '#6a9f58',
     'no align baseline seen': '#b8b0ac',
     'no align baseline unseen': '#b8b0ac',
     'no align baseline hmean': '#b8b0ac',
@@ -49,30 +49,30 @@ MODEL2COLORSTR = {
 }
 
 COLOR_GROUP = {
-    'I+D+T seen': 'tab:blue',
-    'I+D+T unseen': 'tab:blue',
-    'I+D+T hmean': 'tab:blue',
-    'I+T seen': 'tab:orange',
-    'I+T unseen': 'tab:orange',
-    'I+T hmean': 'tab:orange',
-    'I+D seen': 'tab:green',
-    'I+D unseen': 'tab:green',
-    'I+D hmean': 'tab:green',
+    'Image + DNA + Taxonomy seen': 'tab:blue',
+    'Image + DNA + Taxonomy unseen': 'tab:blue',
+    'Image + DNA + Taxonomy hmean': 'tab:blue',
+    'Image + Taxonomy seen': 'tab:orange',
+    'Image + Taxonomy unseen': 'tab:orange',
+    'Image + Taxonomy hmean': 'tab:orange',
+    'Image + DNA seen': 'tab:green',
+    'Image + DNA unseen': 'tab:green',
+    'Image + DNA hmean': 'tab:green',
     'no align baseline seen': '#b8b0ac',
     'no align baseline unseen': '#b8b0ac',
     'no align baseline hmean': '#b8b0ac',
 }
 color_group = {k: matplotlib.colors.to_rgb(v) for k, v in COLOR_GROUP.items()}
 # marker_group = {
-#     'I+D+T seen': 'o',
-#     'I+D+T unseen': 'X',
-#     'I+D+T hmean': 's',
-#     'I+T seen': 'o',
-#     'I+T unseen': 'X',
-#     'I+T hmean': 's',
-#     'I+D seen': 'o',
-#     'I+D unseen': 'X',
-#     'I+D hmean': 's',
+#     'Image + DNA + Taxonomy seen': 'o',
+#     'Image + DNA + Taxonomy unseen': 'X',
+#     'Image + DNA + Taxonomy hmean': 's',
+#     'Image + Taxonomy seen': 'o',
+#     'Image + Taxonomy unseen': 'X',
+#     'Image + Taxonomy hmean': 's',
+#     'Image + DNA seen': 'o',
+#     'Image + DNA unseen': 'X',
+#     'Image + DNA hmean': 's',
 #     'no align baseline seen': 'o',
 #     'no align baseline unseen': 'X',
 #     'no align baseline hmean': 's',
@@ -82,15 +82,15 @@ color_group = {k: matplotlib.colors.to_rgb(v) for k, v in COLOR_GROUP.items()}
 # }
 
 # linestyle_group = {
-#     'I+D+T seen': (),
-#     'I+D+T unseen': (2,1),
-#     'I+D+T hmean': (6,2),
-#     'I+T seen': (),
-#     'I+T unseen': (2,1),
-#     'I+T hmean': (6,2),
-#     'I+D seen': (),
-#     'I+D unseen': (2,1),
-#     'I+D hmean': (6,2),
+#     'Image + DNA + Taxonomy seen': (),
+#     'Image + DNA + Taxonomy unseen': (2,1),
+#     'Image + DNA + Taxonomy hmean': (6,2),
+#     'Image + Taxonomy seen': (),
+#     'Image + Taxonomy unseen': (2,1),
+#     'Image + Taxonomy hmean': (6,2),
+#     'Image + DNA seen': (),
+#     'Image + DNA unseen': (2,1),
+#     'Image + DNA hmean': (6,2),
 #     'no align baseline seen': (),
 #     'no align baseline unseen': (2,1),
 #     'no align baseline hmean': (6,2),
@@ -100,15 +100,15 @@ color_group = {k: matplotlib.colors.to_rgb(v) for k, v in COLOR_GROUP.items()}
 # }
 
 marker_group = {
-    'I+D+T seen': 'o',
-    'I+D+T unseen': 'o',
-    'I+D+T hmean': 'o',
-    'I+T seen': 'o',
-    'I+T unseen': 'o',
-    'I+T hmean': 'o',
-    'I+D seen': 'o',
-    'I+D unseen': 'o',
-    'I+D hmean': 'o',
+    'Image + DNA + Taxonomy seen': 'o',
+    'Image + DNA + Taxonomy unseen': 'o',
+    'Image + DNA + Taxonomy hmean': 'o',
+    'Image + Taxonomy seen': 'o',
+    'Image + Taxonomy unseen': 'o',
+    'Image + Taxonomy hmean': 'o',
+    'Image + DNA seen': 'o',
+    'Image + DNA unseen': 'o',
+    'Image + DNA hmean': 'o',
     'no align baseline seen': 'o',
     'no align baseline unseen': 'o',
     'no align baseline hmean': 'o',
@@ -118,15 +118,15 @@ marker_group = {
 }
 
 linestyle_group = {
-    'I+D+T seen': (),
-    'I+D+T unseen': (),
-    'I+D+T hmean': (),
-    'I+T seen': (),
-    'I+T unseen': (),
-    'I+T hmean': (),
-    'I+D seen': (),
-    'I+D unseen': (),
-    'I+D hmean': (),
+    'Image + DNA + Taxonomy seen': (),
+    'Image + DNA + Taxonomy unseen': (),
+    'Image + DNA + Taxonomy hmean': (),
+    'Image + Taxonomy seen': (),
+    'Image + Taxonomy unseen': (),
+    'Image + Taxonomy hmean': (),
+    'Image + DNA seen': (),
+    'Image + DNA unseen': (),
+    'Image + DNA hmean': (),
     'no align baseline seen': (),
     'no align baseline unseen': (),
     'no align baseline hmean': (),
@@ -134,6 +134,8 @@ linestyle_group = {
     'BioCLIP unseen': (),
     'BioCLIP hmean': (),
 }
+
+# query_key_combination_we_want
 
 def add_harmonic_mean_acc_to_dict(acc_dict):
     for query in acc_dict.keys():
@@ -245,7 +247,7 @@ def plot_all_in_one_v2(acc_dict, acc_types, seen_or_unseen_list, query, key, lin
 
     plot_order = [(0, 0), (0, 1), (0, 2)]
 
-    alignments = ['I+T', 'I+D', 'I+D+T']
+    alignments = ['Image + Taxonomy', 'Image + DNA', 'Image + DNA + Taxonomy']
     for align_idx, alignment in enumerate(alignments):
 
         ax = axes[plot_order[align_idx][1]]
@@ -261,7 +263,7 @@ def plot_all_in_one_v2(acc_dict, acc_types, seen_or_unseen_list, query, key, lin
 def plot_all_in_one(acc_dict, acc_types, seen_or_unseen_list, query, key, line_description, output_pdf_path):
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    pdf_pages = PdfPages(output_pdf_path)  # 创建 PDF 文件
+    pdf_pages = PdfPages(output_pdf_path)
 
     plot_order = [(0, 0), (0, 1)]
 
@@ -326,7 +328,7 @@ if __name__ == '__main__':
 
     query = "encoded_image_feature"
     key = "encoded_image_feature"
-    line_description = [ "I+D+T", "I+T", "I+D","no align baseline",]
+    line_description = [ "Image + DNA + Taxonomy", "Image + Taxonomy", "Image + DNA","no align baseline",]
     acc_dict = {}
 
     for i, path in enumerate(list_of_acc_val_json):
@@ -339,8 +341,27 @@ if __name__ == '__main__':
     # seen_or_unseen_list = ["seen", "unseen", "seen", "unseen"]
     acc_types = ["macro_acc", "macro_acc"]
     seen_or_unseen_list = ["seen", "unseen"]
-    output_pdf_path = "plot/all_plots.pdf"
 
+    # acc_dict_for_scott = {}
+    # for model_name in acc_dict.keys():
+    #     if model_name not in acc_dict_for_scott:
+    #         acc_dict_for_scott[model_name] = {}
+    #     for seen_or_unseen in seen_or_unseen_list:
+    #         if seen_or_unseen not in acc_dict_for_scott[model_name]:
+    #             acc_dict_for_scott[model_name][seen_or_unseen] = {}
+    #         for level in ['order', 'family', 'genus', 'species']:
+    #             acc_dict_for_scott[model_name][seen_or_unseen][level] = acc_dict[model_name][query][key][seen_or_unseen]['macro_acc']['1'][level]
+    #
+    # print(acc_dict_for_scott)
+
+
+
+
+
+    output_pdf_path = "plot/all_plots.pdf"
+    # save acc_dict_for_scott to json
+    # with open("plot/acc_dict_for_scott.json", "w") as f:
+    #     json.dump(acc_dict_for_scott, f)
 
     plot_all_in_one(acc_dict, acc_types, seen_or_unseen_list, query, key, line_description, output_pdf_path)
     # plot_all_in_one_v2(acc_dict, acc_types, seen_or_unseen_list, query, key, line_description, output_pdf_path)
