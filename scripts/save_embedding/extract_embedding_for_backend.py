@@ -56,11 +56,17 @@ def main(args: DictConfig) -> None:
     else:
         checkpoint = torch.load(args.model_config.ckpt_path, map_location="cuda:0")
         model.load_state_dict(checkpoint)
-    # Load data
-    args.model_config.batch_size = 24
+
+    print("Model loaded!")
+    print("Start processing dataloader...")
+
     pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, all_keys_dataloader, other_heldout_dataloader = load_dataloader_for_everything_in_5m(args)
     if hasattr(args.model_config, "dataset") and args.model_config.dataset == "bioscan_5m":
         dataloaders_that_need_to_be_process = [pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, all_keys_dataloader, other_heldout_dataloader]
+
+    print("Done processing dataloader!")
+
+    print("Start extracting features...")
 
     extracted_features_path = os.path.join(folder_for_saving,
                                            f"extracted_features_for_all_5m_data.hdf5")
