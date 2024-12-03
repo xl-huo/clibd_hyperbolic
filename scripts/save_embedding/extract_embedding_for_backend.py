@@ -10,6 +10,8 @@ from bioscanclip.model.simple_clip import load_clip_model
 from bioscanclip.util.dataset import load_dataloader_for_everything_in_5m
 from bioscanclip.util.util import get_features_and_label
 
+
+
 PLOT_FOLDER = "html_plots"
 RETRIEVAL_FOLDER = "image_retrieval"
 
@@ -65,8 +67,12 @@ def main(args: DictConfig) -> None:
 
     feature_length = args.model_config.output_dim
 
+    if os.path.exists(extracted_features_path):
+        os.remove(extracted_features_path)
+
     with h5py.File(extracted_features_path, "a") as hdf5_file:
         for index, dataloader in enumerate(dataloaders_that_need_to_be_process):
+            print(f"Processing dataloader {index + 1}/{len(dataloaders_that_need_to_be_process)}")
             embedding_dict = get_features_and_label(dataloader, model, device)
             labels = convert_labels_to_four_list(embedding_dict["label_list"])
             label_names = ["order_list", "family_list", "genus_list", "species_list"]
