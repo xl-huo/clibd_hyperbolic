@@ -61,7 +61,7 @@ def main(args: DictConfig) -> None:
     print("Start processing dataloader...")
 
     pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, all_keys_dataloader, other_heldout_dataloader = load_dataloader_for_everything_in_5m(args)
-    dataloaders_that_need_to_be_process = [pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, all_keys_dataloader, other_heldout_dataloader]
+    dataloaders_that_need_to_be_process = [other_heldout_dataloader, pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, all_keys_dataloader]
 
     print("Done processing dataloader!")
 
