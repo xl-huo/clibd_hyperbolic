@@ -543,6 +543,99 @@ def load_bioscan_dataloader_with_train_seen_and_separate_keys(args, world_size=N
         test_unseen_keys_dataloader,
     )
 
+def load_dataloader_for_everything_in_5m(args, world_size=None, rank=None):
+    length_dict = get_len_dict(args)
+
+    return_language = True
+
+    sequence_pipeline = get_sequence_pipeline()
+
+    pre_train_dataloader = construct_dataloader(
+        args,
+        "no_split_and_seen_train",
+        length_dict["no_split_and_seen_train"],
+        sequence_pipeline,
+        return_language=return_language,
+        labels=None,
+        for_pre_train=False,
+        world_size=world_size,
+        rank=rank,
+        shuffle=False,
+    )
+
+    all_keys_dataloader = construct_dataloader(
+        args,
+        "all_keys",
+        length_dict["all_keys"],
+        sequence_pipeline,
+        return_language=return_language,
+        labels=None,
+        for_pre_train=False,
+        world_size=world_size,
+        rank=rank,
+    )
+
+    seen_val_dataloader = construct_dataloader(
+        args,
+        "val_seen",
+        length_dict["val_seen"],
+        sequence_pipeline,
+        return_language=return_language,
+        labels=None,
+        for_pre_train=False,
+        world_size=world_size,
+        rank=rank,
+    )
+
+    unseen_val_dataloader = construct_dataloader(
+        args,
+        "val_unseen",
+        length_dict["val_unseen"],
+        sequence_pipeline,
+        return_language=return_language,
+        labels=None,
+        for_pre_train=False,
+        world_size=world_size,
+        rank=rank,
+    )
+
+    seen_test_dataloader = construct_dataloader(
+        args,
+        "test_seen",
+        length_dict["test_seen"],
+        sequence_pipeline,
+        return_language=return_language,
+        labels=None,
+        for_pre_train=False,
+        world_size=world_size,
+        rank=rank,
+    )
+
+    unseen_test_dataloader = construct_dataloader(
+        args,
+        "test_unseen",
+        length_dict["test_unseen"],
+        sequence_pipeline,
+        return_language=return_language,
+        labels=None,
+        for_pre_train=False,
+        world_size=world_size,
+        rank=rank,
+    )
+    other_heldout_dataloader = construct_dataloader(
+        args,
+        "other_heldout",
+        length_dict["other_heldout"],
+        sequence_pipeline,
+        return_language=return_language,
+        labels=None,
+        for_pre_train=False,
+        world_size=world_size,
+        rank=rank,
+    )
+
+    return pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, all_keys_dataloader, other_heldout_dataloader
+
 
 def load_dataloader(args, world_size=None, rank=None, for_pretrain=True):
     length_dict = get_len_dict(args)
