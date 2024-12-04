@@ -47,17 +47,28 @@ def write_feature_to_hdf5_file(embedding_dict, hdf5_file, feature_length=768):
             hdf5_file[label_name].resize((original_len + len(label_data),))
             hdf5_file[label_name][original_len:] = label_data
         else:
-            hdf5_file.create_dataset(label_name, data=label_data, maxshape=(None,))
+            hdf5_file.create_dataset(
+                label_name,
+                data=label_data,
+                maxshape=(None,),
+                compression='lzf',
+                chunks=True
+            )
 
     for encoded_name in encoded_names:
-        feature_data = np.array(embedding_dict[encoded_name])
+        feature_data = np.array(embedding_dict[encoded_name], dtype='float32')
         if encoded_name in hdf5_file:
             original_len = hdf5_file[encoded_name].shape[0]
-            hdf5_file[encoded_name].resize((original_len + feature_data.shape[0], feature_length))
+            hdf5_file[encoded_name].resize((original_len + feature_data.shape[0], 768))
             hdf5_file[encoded_name][original_len:] = feature_data
         else:
-            hdf5_file.create_dataset(encoded_name, data=feature_data, maxshape=(None, feature_length))
-
+            hdf5_file.create_dataset(
+                encoded_name,
+                data=feature_data,
+                maxshape=(None, feature_length),
+                compression='lzf',
+                chunks=(100, feature_length)
+            )
 
 def create_feature_dict(file_name_list, encoded_image_feature_list, encoded_dna_feature_list, encoded_text_feature_list,
                         label_list):
@@ -182,7 +193,6 @@ def main(args: DictConfig) -> None:
     with h5py.File(extracted_features_path, "a") as hdf5_file:
         for index, dataloader in enumerate(dataloaders_that_need_to_be_process):
             print(f"Processing dataloader {index + 1}/{len(dataloaders_that_need_to_be_process)}")
-
             wirte_feature_to_hdf5_file(
                 dataloader, model, device, hdf5_file, multi_gpu=False, for_open_clip=False
             )
