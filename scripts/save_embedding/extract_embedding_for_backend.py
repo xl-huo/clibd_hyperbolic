@@ -51,7 +51,8 @@ def write_feature_to_hdf5_file(embedding_dict, hdf5_file, feature_length=768):
                 label_name,
                 data=label_data,
                 maxshape=(None,),
-                compression='lzf',
+                compression='gzip',
+                compression_opts=5,
                 chunks=True
             )
 
@@ -66,7 +67,8 @@ def write_feature_to_hdf5_file(embedding_dict, hdf5_file, feature_length=768):
                 encoded_name,
                 data=feature_data,
                 maxshape=(None, feature_length),
-                compression='lzf',
+                compression='gzip',
+                compression_opts=5,
                 chunks=(100, feature_length)
             )
 
@@ -96,16 +98,18 @@ def create_feature_dict(file_name_list, encoded_image_feature_list, encoded_dna_
 
 def wirte_feature_to_hdf5_file(dataloader, model, device, hdf5_file, for_open_clip=False, multi_gpu=False,
                                limit_iter_for_write=300):
+    pbar = tqdm(enumerate(dataloader), total=len(dataloader))
+    model.eval()
+    count = 0
+    file_name_list = []
     encoded_image_feature_list = []
     encoded_dna_feature_list = []
     encoded_text_feature_list = []
     label_list = []
-    file_name_list = []
-    pbar = tqdm(enumerate(dataloader), total=len(dataloader))
-    model.eval()
-    count = 0
+
     with torch.no_grad():
         for step, batch in pbar:
+
             count += 1
             pbar.set_description(f"Encoding features")
             processid_batch, image_input_batch, dna_input_batch, input_ids, token_type_ids, attention_mask, label_batch = batch
@@ -135,6 +139,20 @@ def wirte_feature_to_hdf5_file(dataloader, model, device, hdf5_file, for_open_cl
                 embedding_dict = create_feature_dict(file_name_list, encoded_image_feature_list,
                                                      encoded_dna_feature_list, encoded_text_feature_list, label_list)
                 write_feature_to_hdf5_file(embedding_dict, hdf5_file, feature_length=768)
+                count = 0
+
+                del file_name_list
+                del encoded_image_feature_list
+                del encoded_dna_feature_list
+                del encoded_text_feature_list
+                del label_list
+
+                encoded_image_feature_list = []
+                encoded_dna_feature_list = []
+                encoded_text_feature_list = []
+                label_list = []
+                file_name_list = []
+
 
         if len(encoded_image_feature_list) > 0:
             embedding_dict = create_feature_dict(file_name_list, encoded_image_feature_list, encoded_dna_feature_list,
