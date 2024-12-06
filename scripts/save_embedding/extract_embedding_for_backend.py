@@ -40,6 +40,22 @@ def write_feature_to_hdf5_file(embedding_dict, hdf5_file, feature_length=768):
     label_names = ["order_list", "family_list", "genus_list", "species_list"]
     encoded_names = ["encoded_image_feature", "encoded_dna_feature", "encoded_language_feature"]
 
+    # write file name list
+    file_name_list = np.array([s.encode('utf-8') for s in embedding_dict["file_name_list"]])
+    if "file_name_list" in hdf5_file:
+        original_len = hdf5_file["file_name_list"].shape[0]
+        hdf5_file["file_name_list"].resize((original_len + len(file_name_list),))
+        hdf5_file["file_name_list"][original_len:] = file_name_list
+    else:
+        hdf5_file.create_dataset(
+            "file_name_list",
+            data=file_name_list,
+            maxshape=(None,),
+            compression='gzip',
+            compression_opts=5,
+            chunks=True
+        )
+
     for label_name, label_data in zip(label_names, labels):
         label_data = np.array([s.encode('utf-8') for s in label_data])
         if label_name in hdf5_file:
