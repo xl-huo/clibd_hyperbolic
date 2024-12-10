@@ -40,6 +40,8 @@ We provide pretrained embeddings and model weights.  We evaluate our models by e
 | BIOSCAN-5M    |  **I**mage + **D**NA        |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/extracted_embedding/bioscan_5m/image_dna_4gpu/extracted_feature_from_val_split.hdf5)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/new_5M_training/trained_with_5M_image_dna/best.pth)    |  [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_5m/final_experiments/image_dna_seed_42.yaml)  |
 | BIOSCAN-5M    |  **I**mage + **D**NA + **T**ax  |  [Embedding](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/extracted_embedding/bioscan_5m/image_dna_text_4gpu/extracted_feature_from_val_split.hdf5)      |  [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/version_0_2_0/new_5M_training/trained_with_5M_image_dna_text/best.pth)|   [Link](https://github.com/bioscan-ml/clibd/blob/main/bioscanclip/config/model_config/for_bioscan_5m/final_experiments/image_dna_text_seed_42.yaml)  |
 
+We also provide checkpoints trained with LoRA layers. You can download them from this [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/bioscan_clip/lora_version_ckpt.zip)
+
 ## Quick start
 Instead of conducting a full training, you can choose to download pre-trained models or pre-extracted embeddings for evaluation from the table. You may need to posistion the downloaded checkpoints and extracted features in to the proper position based on the config file.
 
