@@ -23,6 +23,8 @@ from bioscanclip.model.simple_clip import load_clip_model
 from bioscanclip.util.util import set_seed
 from bioscanclip.util.dataset import load_dataloader, load_insect_dataloader
 from bioscanclip.util.util import scale_learning_rate
+from bioscanclip.model.clip_trainer import CLIPTrainer
+
 
 
 def print_when_rank_zero(message, rank=0):
@@ -140,10 +142,9 @@ def compute_overall_acc(acc_dict):
     overall_acc = sum(overall_acc_list) / len(overall_acc_list)
     return overall_acc
 
-def main_process(rank: int, world_size: int, args):
-    stop_flag = torch.tensor([0], device=rank)
 
-    if args.debug_flag or rank != 0:
+def main_process(args):
+    if args.debug_flag:
         args.activate_wandb = False
         args.save_inference = False
         args.save_ckpt = False
@@ -156,18 +157,15 @@ def main_process(rank: int, world_size: int, args):
         if not hasattr(args.model_config, "for_open_clip"):
             args.model_config.for_open_clip = False
 
-    ddp_setup(rank, world_size, str(args.model_config.port))
-
     # Load DATALOADER
-    if rank == 0:
-        print("Construct dataloader...")
+    print("Construct dataloader...")
     if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "INSECT":
         insect_train_dataloader, insect_train_dataloader_for_key, insect_val_dataloader, insect_test_seen_dataloader, insect_test_unseen_dataloader = load_insect_dataloader(
-            args, world_size=world_size, rank=rank)
+            args)
         pre_train_dataloader = insect_train_dataloader
     else:
         pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(
-            args, world_size=world_size, rank=rank)
+            args)
 
     # optional configs
     for_open_clip = False
@@ -193,13 +191,16 @@ def main_process(rank: int, world_size: int, args):
     scaler = GradScaler(enabled=enable_amp)
 
     # Load MODEL
-    if rank == 0:
-        print("Initialize model...")
-    model = load_clip_model(args, device=rank)
+
+    print("Initialize model...")
+    trainer = CLIPTrainer(args)
+
+    exit()
+
+    model = load_clip_model(args)
     if hasattr(args.model_config, 'pretrained_ckpt_path'):
         checkpoint = torch.load(args.model_config.pretrained_ckpt_path, map_location='cuda:0')
         model.load_state_dict(checkpoint)
-    model = DDP(model, device_ids=[rank], find_unused_parameters=True)
 
     total_steps = len(pre_train_dataloader) * args.model_config.epochs
 
@@ -213,8 +214,7 @@ def main_process(rank: int, world_size: int, args):
     and scale it by the number of GPUs and batch size.
     """
 
-    lr = scale_learning_rate(lr=lr, batch_size=args.model_config.batch_size, world_size=world_size)
-
+    lr = scale_learning_rate(lr=lr, batch_size=args.model_config.batch_size)
 
     optimizer = optim.AdamW(model.parameters(), lr=lr)
     scheduler = None
@@ -223,7 +223,7 @@ def main_process(rank: int, world_size: int, args):
             max_lr = 0.001
             if hasattr(args.model_config.lr_config, 'max_lr'):
                 max_lr = args.model_config.lr_config.max_lr
-            max_lr = scale_learning_rate(lr=max_lr, batch_size=args.model_config.batch_size, world_size=world_size)
+            max_lr = scale_learning_rate(lr=max_lr, batch_size=args.model_config.batch_size)
             scheduler = lr_scheduler.OneCycleLR(
                 optimizer,
                 max_lr=max_lr,
@@ -240,7 +240,7 @@ def main_process(rank: int, world_size: int, args):
             min_lr = 1e-9
             if hasattr(args.model_config.lr_config, 'min_lr'):
                 min_lr = args.model_config.lr_config.min_lr
-            min_lr = scale_learning_rate(lr=min_lr, batch_size=args.model_config.batch_size, world_size=world_size)
+            min_lr = scale_learning_rate(lr=min_lr, batch_size=args.model_config.batch_size)
             scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=min_lr)
 
     bind_to = None
@@ -253,16 +253,16 @@ def main_process(rank: int, world_size: int, args):
 
     if all_gather:
         criterion = ClipLoss(local_loss=args.model_config.loss_setup.local_loss,
-                             gather_with_grad=args.model_config.loss_setup.gather_with_grad, rank=rank,
-                             world_size=world_size, use_horovod=args.model_config.loss_setup.use_horovod,
+                             gather_with_grad=args.model_config.loss_setup.gather_with_grad,
+                             use_horovod=args.model_config.loss_setup.use_horovod,
                              criterion=nn.CrossEntropyLoss(), bind_to=bind_to, no_image_text_loss=no_image_text_loss)
     else:
         criterion = ContrastiveLoss(criterion=nn.CrossEntropyLoss(), logit_scale=1 / 0.07)
 
-    if args.activate_wandb and rank == 0:
+    if args.activate_wandb:
         wandb.init(project=args.model_config.wandb_project_name, name=args.model_config.model_output_name)
-    if rank == 0:
-        print("training...")
+
+    print("training...")
 
     k_list = [1, 3, 5]
 
@@ -275,17 +275,14 @@ def main_process(rank: int, world_size: int, args):
     OmegaConf.save(args, os.path.join(folder_path, 'config.yaml'))
 
     for epoch in range(args.model_config.epochs):
-        dist.broadcast(stop_flag, src=0)
-        if stop_flag.item() == 1:
-            print(f"Process {rank} stopping at epoch {epoch} due to early stopping")
-            break
         train_epoch(args.activate_wandb, args.model_config.epochs, epoch,
-                                                                 pre_train_dataloader, model, optimizer,
-                                                                 criterion, rank, rank=rank, scheduler=scheduler,
-                                                                 for_open_clip=for_open_clip,
-                                                                 fix_temperature=fix_temperature, scaler=scaler, enable_autocast=enable_amp)
+                    pre_train_dataloader, model, optimizer,
+                    criterion, scheduler=scheduler,
+                    for_open_clip=for_open_clip,
+                    fix_temperature=fix_temperature, scaler=scaler, enable_autocast=enable_amp)
 
-        if (epoch % args.model_config.evaluation_period == 0 or epoch == args.model_config.epochs - 1) and rank == 0 and epoch > eval_skip_epoch:
+        if (
+                epoch % args.model_config.evaluation_period == 0 or epoch == args.model_config.epochs - 1)and epoch > eval_skip_epoch:
             original_model = model.module if hasattr(model, 'module') else model
             if args.save_ckpt:
                 last_ckpt_path = os.path.join(folder_path, f'last.pth')
@@ -295,7 +292,7 @@ def main_process(rank: int, world_size: int, args):
             if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "INSECT":
                 acc_dict, pred_dict = eval_phase(original_model, rank, insect_train_dataloader_for_key,
                                                  insect_test_seen_dataloader, insect_test_unseen_dataloader, k_list,
-                                                 args=args, for_open_clip=for_open_clip, rank=rank)
+                                                 args=args, for_open_clip=for_open_clip)
             else:
                 acc_dict, pred_dict = eval_phase(original_model, rank, all_keys_dataloader, seen_val_dataloader,
                                                  unseen_val_dataloader, k_list, rank=rank, args=args,
@@ -314,18 +311,13 @@ def main_process(rank: int, world_size: int, args):
 
                     torch.save(original_model.state_dict(), best_ckpt_path)
                     print(f'Best ckpt: {best_ckpt_path}')
-            else:
-                if args.enable_early_stopping:
-                    stop_flag[0] = 1
             dict_for_wandb["overall_acc"] = overall_acc
             dict_for_wandb["best_epoch"] = best_epoch
-            if args.activate_wandb and rank == 0:
+            if args.activate_wandb:
                 wandb.log(dict_for_wandb,
                           commit=True)
-        dist.broadcast(stop_flag, src=0)
-        if stop_flag.item() == 1:
-            print(f"Process {rank} stopping at epoch {epoch} due to early stopping")
-            break
+
+
 
 @hydra.main(config_path="../bioscanclip/config", config_name="global_config", version_base="1.1")
 def main(args: DictConfig) -> None:
@@ -339,12 +331,14 @@ def main(args: DictConfig) -> None:
         default_seed = args.model_config.default_seed
 
     if hasattr(args.model_config, 'random_seed') and args.model_config.random_seed:
-        seed = set_seed(); string = "random seed"
+        seed = set_seed();
+        string = "random seed"
     else:
-        seed = set_seed(seed=int(default_seed)); string = "default seed"
+        seed = set_seed(seed=int(default_seed));
+        string = "default seed"
     print("The module is run with %s: %d" % (string, seed))
 
-    mp.spawn(main_process, args=(world_size, args), nprocs=world_size)
+    main_process(args=args)
 
 
 if __name__ == '__main__':
