@@ -40,6 +40,9 @@ class CLIBDLightning(pl.LightningModule):
         self.all_keys_dataloader = all_keys_dataloader
         self.seen_val_dataloader = seen_val_dataloader
         self.unseen_val_dataloader = unseen_val_dataloader
+        if k_list is None:
+            k_list = [1, 3, 5]
+        self.k_list = k_list
 
     def setup_criterion(self):
         if self.all_gather:
