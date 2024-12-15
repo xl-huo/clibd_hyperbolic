@@ -718,7 +718,7 @@ def load_dataloader(args, world_size=None, rank=None, for_pretrain=True, use_onl
             sequence_pipeline,
             return_language=return_language,
             labels=None,
-            for_pre_train=False,
+            for_pre_train=True,
             world_size=world_size,
             rank=rank,
             shuffle=True,
