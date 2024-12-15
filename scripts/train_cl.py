@@ -104,10 +104,10 @@ def main_process(args):
     # else:
     #     pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
     
-    # pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
+    pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
 
     # Debug with smaller dataset
-    pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args, use_only_train_seen=True)
+    # pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args, use_only_train_seen=True)
 
 
     # optional configs
