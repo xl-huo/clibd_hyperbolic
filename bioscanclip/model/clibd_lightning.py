@@ -88,9 +88,7 @@ class CLIBDLightning(pl.LightningModule):
 
         return loss
 
-    def on_validation_epoch_end(self):
-
-
+    def on_train_epoch_end(self):
         device = next(self.model.parameters()).device
 
         acc_dict, pred_dict = eval_phase(
