@@ -25,10 +25,14 @@ class SimpleCLIP(nn.Module):
         if for_bio_clip:
             self.tokenizer_for_open_clip = open_clip.get_tokenizer('hf-hub:imageomics/bioclip') if open_clip_model is not None else None
         self.logit_scale = nn.Parameter(torch.ones([]) * init_logit_scale)
+
+
         if init_logit_bias is not None:
             self.logit_bias = nn.Parameter(torch.ones([]) * init_logit_bias)
         else:
             self.logit_bias = None
+
+
 
     def forward(self, image_input, dna_input, language_input):
         image_output = None

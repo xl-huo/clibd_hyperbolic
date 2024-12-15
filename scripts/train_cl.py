@@ -23,8 +23,9 @@ from bioscanclip.model.simple_clip import load_clip_model
 from bioscanclip.util.util import set_seed
 from bioscanclip.util.dataset import load_dataloader, load_insect_dataloader
 from bioscanclip.util.util import scale_learning_rate
-from bioscanclip.model.clip_trainer import CLIPTrainer
-
+from bioscanclip.model.clibd_lightning import CLIBDLightning
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.strategies import DDPStrategy
 
 
 def print_when_rank_zero(message, rank=0):
@@ -71,76 +72,13 @@ def construct_key_dict(list_of_dict):
     return key_dict
 
 
-def eval_phase(model, device, all_keys_dataloader, seen_val_dataloader, unseen_val_dataloader, k_list, args,
-               species_to_drop=None, rank=None, for_open_clip=False):
-    keys_dict = get_features_and_label(
-        all_keys_dataloader, model, device, for_key_set=True, for_open_clip=for_open_clip)
-
-    seen_val_dict = get_features_and_label(
-        seen_val_dataloader, model, device, for_open_clip=for_open_clip)
-
-    unseen_val_dict = get_features_and_label(
-        unseen_val_dataloader, model, device, for_open_clip=for_open_clip)
-
-    acc_dict, _, pred_dict = inference_and_print_result(keys_dict, seen_val_dict, unseen_val_dict, args=args,
-                                                        small_species_list=None, k_list=k_list)
-    return acc_dict, pred_dict
 
 
-def eval_phase_for_insect(model, device, insect_train_dataloader_for_key, insect_val_dataloader,
-                          insect_test_seen_dataloader, insect_test_unseen_dataloader, k_list, args,
-                          species_to_drop=None):
-    insect_train_dict = get_features_and_label(
-        insect_train_dataloader_for_key, model, device)
-    insect_val_dict = get_features_and_label(
-        insect_val_dataloader, model, device)
-    insect_test_seen_dict = get_features_and_label(
-        insect_test_seen_dataloader, model, device)
-    insect_test_unseen_dict = get_features_and_label(
-        insect_test_unseen_dataloader, model, device)
-
-    keys_dict = construct_key_dict([insect_train_dict, insect_val_dict, insect_test_seen_dict, insect_test_unseen_dict])
-
-    acc_dict, _, pred_dict = inference_and_print_result(keys_dict, insect_test_seen_dict, insect_test_unseen_dict,
-                                                        args=args,
-                                                        small_species_list=None, k_list=k_list)
-
-    return acc_dict, pred_dict
 
 
-def convert_acc_dict_to_wandb_dict(acc_dict):
-    dict_for_wandb = {}
-    acc_dict = acc_dict['encoded_image_feature']['encoded_image_feature']
-
-    # For now, we just put query: image and key:image acc to wandb
-    for split, split_dict in acc_dict.items():
-        for type_of_acc, type_of_acc_dict in split_dict.items():
-            for k, k_dict in type_of_acc_dict.items():
-                for level, curr_acc in type_of_acc_dict.items():
-                    dict_for_wandb[f"Image to Image_{split} {type_of_acc} top-{k} {level} level"] = curr_acc
-
-    return dict_for_wandb
 
 
-def compute_overall_acc(acc_dict):
-    overall_acc_list = []
 
-    for query_type in acc_dict.keys():
-        for key_type in acc_dict[query_type].keys():
-            for seen_or_unseen in acc_dict[query_type][key_type].keys():
-                for micro_and_macro in acc_dict[query_type][key_type][seen_or_unseen].keys():
-                    for k in acc_dict[query_type][key_type][seen_or_unseen][micro_and_macro].keys():
-                        if k == 3 or k == 5:
-                            # Only care about top 1 accuracy
-                            continue
-                        for level in acc_dict[query_type][key_type][seen_or_unseen][micro_and_macro][k].keys():
-                            try:
-                                curr_acc = acc_dict[query_type][key_type][seen_or_unseen][micro_and_macro][k][level]
-                                overall_acc_list.append(curr_acc)
-                            except:
-                                pass
-    overall_acc = sum(overall_acc_list) / len(overall_acc_list)
-    return overall_acc
 
 
 def main_process(args):
@@ -159,13 +97,18 @@ def main_process(args):
 
     # Load DATALOADER
     print("Construct dataloader...")
-    if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "INSECT":
-        insect_train_dataloader, insect_train_dataloader_for_key, insect_val_dataloader, insect_test_seen_dataloader, insect_test_unseen_dataloader = load_insect_dataloader(
-            args)
-        pre_train_dataloader = insect_train_dataloader
-    else:
-        pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(
-            args)
+    # if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "INSECT":
+    #     insect_train_dataloader, insect_train_dataloader_for_key, insect_val_dataloader, insect_test_seen_dataloader, insect_test_unseen_dataloader = load_insect_dataloader(
+    #         args)
+    #     pre_train_dataloader = insect_train_dataloader
+    # else:
+    #     pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
+    
+    # pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
+
+    # Debug with smaller dataset
+    pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args, use_only_train_seen=True)
+
 
     # optional configs
     for_open_clip = False
@@ -193,129 +136,38 @@ def main_process(args):
     # Load MODEL
 
     print("Initialize model...")
-    trainer = CLIPTrainer(args)
 
-    exit()
-
-    model = load_clip_model(args)
-    if hasattr(args.model_config, 'pretrained_ckpt_path'):
-        checkpoint = torch.load(args.model_config.pretrained_ckpt_path, map_location='cuda:0')
-        model.load_state_dict(checkpoint)
-
-    total_steps = len(pre_train_dataloader) * args.model_config.epochs
-
-    lr = 0.001
-
-    if hasattr(args.model_config, 'lr_config') and hasattr(args.model_config.lr_config, 'lr'):
-        lr = args.model_config.lr_config.lr
-    """
-    We do not scale the learning rate then write in the config. 
-    Instead, we get the general learning rate from the config 
-    and scale it by the number of GPUs and batch size.
-    """
-
-    lr = scale_learning_rate(lr=lr, batch_size=args.model_config.batch_size)
-
-    optimizer = optim.AdamW(model.parameters(), lr=lr)
-    scheduler = None
-    if hasattr(args.model_config, 'lr_scheduler'):
-        if args.model_config.lr_scheduler == 'one_cycle':
-            max_lr = 0.001
-            if hasattr(args.model_config.lr_config, 'max_lr'):
-                max_lr = args.model_config.lr_config.max_lr
-            max_lr = scale_learning_rate(lr=max_lr, batch_size=args.model_config.batch_size)
-            scheduler = lr_scheduler.OneCycleLR(
-                optimizer,
-                max_lr=max_lr,
-                total_steps=total_steps,
-                pct_start=0.3,
-                anneal_strategy='cos',
-                cycle_momentum=False,
-            )
-        elif args.model_config.lr_scheduler == 'exponential':
-            scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
-        elif args.model_config.lr_scheduler == 'step':
-            scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-        elif args.model_config.lr_scheduler == 'cosine':
-            min_lr = 1e-9
-            if hasattr(args.model_config.lr_config, 'min_lr'):
-                min_lr = args.model_config.lr_config.min_lr
-            min_lr = scale_learning_rate(lr=min_lr, batch_size=args.model_config.batch_size)
-            scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=min_lr)
-
-    bind_to = None
-    if hasattr(args.model_config, 'bind_to'):
-        bind_to = args.model_config.bind_to
-
-    no_image_text_loss = False
-    if hasattr(args.model_config, 'no_image_text_loss'):
-        no_image_text_loss = args.model_config.no_image_text_loss
-
-    if all_gather:
-        criterion = ClipLoss(local_loss=args.model_config.loss_setup.local_loss,
-                             gather_with_grad=args.model_config.loss_setup.gather_with_grad,
-                             use_horovod=args.model_config.loss_setup.use_horovod,
-                             criterion=nn.CrossEntropyLoss(), bind_to=bind_to, no_image_text_loss=no_image_text_loss)
-    else:
-        criterion = ContrastiveLoss(criterion=nn.CrossEntropyLoss(), logit_scale=1 / 0.07)
-
+    wandb_logger = None
     if args.activate_wandb:
-        wandb.init(project=args.model_config.wandb_project_name, name=args.model_config.model_output_name)
-
-    print("training...")
-
+        wandb_logger = WandbLogger(project=args.model_config.wandb_project_name, name=args.model_config.trainer.model_output_name)
+        wandb_logger.log_hyperparams(args)
     k_list = [1, 3, 5]
+    model = CLIBDLightning(args, len_train_dataloader=len(pre_train_dataloader), all_keys_dataloader=all_keys_dataloader,
+                          seen_val_dataloader=seen_val_dataloader, unseen_val_dataloader=unseen_val_dataloader, k_list=k_list)
 
-    best_epoch = None
-    best_overall_acc = None
+    if hasattr(args.model_config, 'pretrained_ckpt_path'):
+        model.load_from_checkpoint_with_path(args.model_config.pretrained_ckpt_path)
+
+
+
+
+    trainer = hydra.utils.instantiate(args.model_config.trainer, logger=wandb_logger)
+
     folder_path = os.path.join(args.project_root_path, args.model_output_dir,
-                               args.model_config.model_output_name, formatted_datetime)
+                                    args.model_config.model_output_name, formatted_datetime)
     os.makedirs(folder_path, exist_ok=True)
 
     OmegaConf.save(args, os.path.join(folder_path, 'config.yaml'))
 
-    for epoch in range(args.model_config.epochs):
-        train_epoch(args.activate_wandb, args.model_config.epochs, epoch,
-                    pre_train_dataloader, model, optimizer,
-                    criterion, scheduler=scheduler,
-                    for_open_clip=for_open_clip,
-                    fix_temperature=fix_temperature, scaler=scaler, enable_autocast=enable_amp)
+    print("training...")
+    trainer.fit(model=model, train_dataloaders=pre_train_dataloader, ckpt_path=None)
 
-        if (
-                epoch % args.model_config.evaluation_period == 0 or epoch == args.model_config.epochs - 1)and epoch > eval_skip_epoch:
-            original_model = model.module if hasattr(model, 'module') else model
-            if args.save_ckpt:
-                last_ckpt_path = os.path.join(folder_path, f'last.pth')
-                torch.save(original_model.state_dict(), last_ckpt_path)
-                print(f'Last ckpt: {last_ckpt_path}')
 
-            if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "INSECT":
-                acc_dict, pred_dict = eval_phase(original_model, rank, insect_train_dataloader_for_key,
-                                                 insect_test_seen_dataloader, insect_test_unseen_dataloader, k_list,
-                                                 args=args, for_open_clip=for_open_clip)
-            else:
-                acc_dict, pred_dict = eval_phase(original_model, rank, all_keys_dataloader, seen_val_dataloader,
-                                                 unseen_val_dataloader, k_list, rank=rank, args=args,
-                                                 for_open_clip=for_open_clip)
+    exit()
 
-            dict_for_wandb = convert_acc_dict_to_wandb_dict(acc_dict)
-            dict_for_wandb['epoch'] = epoch
 
-            overall_acc = compute_overall_acc(acc_dict)
 
-            if best_overall_acc is None or best_overall_acc < overall_acc:
-                best_epoch = epoch
-                best_overall_acc = overall_acc
-                if args.save_ckpt:
-                    best_ckpt_path = os.path.join(folder_path, f'best.pth')
 
-                    torch.save(original_model.state_dict(), best_ckpt_path)
-                    print(f'Best ckpt: {best_ckpt_path}')
-            dict_for_wandb["overall_acc"] = overall_acc
-            dict_for_wandb["best_epoch"] = best_epoch
-            if args.activate_wandb:
-                wandb.log(dict_for_wandb,
-                          commit=True)
 
 
 

@@ -807,3 +807,73 @@ def remove_module_from_state_dict(state_dict):
     for key, value in state_dict.items():
         new_state_dict[key.replace("module.", "")] = value
     return new_state_dict
+
+def eval_phase(model, device, all_keys_dataloader, seen_val_dataloader, unseen_val_dataloader, k_list, args,
+               species_to_drop=None, rank=None, for_open_clip=False):
+    keys_dict = get_features_and_label(
+        all_keys_dataloader, model, device, for_key_set=True, for_open_clip=for_open_clip)
+
+    seen_val_dict = get_features_and_label(
+        seen_val_dataloader, model, device, for_open_clip=for_open_clip)
+
+    unseen_val_dict = get_features_and_label(
+        unseen_val_dataloader, model, device, for_open_clip=for_open_clip)
+
+    acc_dict, _, pred_dict = inference_and_print_result(keys_dict, seen_val_dict, unseen_val_dict, args=args,
+                                                        small_species_list=None, k_list=k_list)
+    return acc_dict, pred_dict
+
+
+def eval_phase_for_insect(model, device, insect_train_dataloader_for_key, insect_val_dataloader,
+                          insect_test_seen_dataloader, insect_test_unseen_dataloader, k_list, args,
+                          species_to_drop=None):
+    insect_train_dict = get_features_and_label(
+        insect_train_dataloader_for_key, model, device)
+    insect_val_dict = get_features_and_label(
+        insect_val_dataloader, model, device)
+    insect_test_seen_dict = get_features_and_label(
+        insect_test_seen_dataloader, model, device)
+    insect_test_unseen_dict = get_features_and_label(
+        insect_test_unseen_dataloader, model, device)
+
+    keys_dict = construct_key_dict([insect_train_dict, insect_val_dict, insect_test_seen_dict, insect_test_unseen_dict])
+
+    acc_dict, _, pred_dict = inference_and_print_result(keys_dict, insect_test_seen_dict, insect_test_unseen_dict,
+                                                        args=args,
+                                                        small_species_list=None, k_list=k_list)
+
+    return acc_dict, pred_dict
+
+def convert_acc_dict_to_wandb_dict(acc_dict):
+    dict_for_wandb = {}
+    acc_dict = acc_dict['encoded_image_feature']['encoded_image_feature']
+
+    # For now, we just put query: image and key:image acc to wandb
+    for split, split_dict in acc_dict.items():
+        for type_of_acc, type_of_acc_dict in split_dict.items():
+            for k, k_dict in type_of_acc_dict.items():
+                for level, curr_acc in type_of_acc_dict.items():
+                    dict_for_wandb[f"Image to Image_{split} {type_of_acc} top-{k} {level} level"] = curr_acc
+
+    return dict_for_wandb
+
+def compute_overall_acc(acc_dict):
+    overall_acc_list = []
+
+    for query_type in acc_dict.keys():
+        for key_type in acc_dict[query_type].keys():
+            for seen_or_unseen in acc_dict[query_type][key_type].keys():
+                for micro_and_macro in acc_dict[query_type][key_type][seen_or_unseen].keys():
+                    for k in acc_dict[query_type][key_type][seen_or_unseen][micro_and_macro].keys():
+                        if k == 3 or k == 5:
+                            # Only care about top 1 accuracy
+                            continue
+                        for level in acc_dict[query_type][key_type][seen_or_unseen][micro_and_macro][k].keys():
+                            try:
+                                curr_acc = acc_dict[query_type][key_type][seen_or_unseen][micro_and_macro][k][level]
+                                overall_acc_list.append(curr_acc)
+                            except:
+                                pass
+    overall_acc = sum(overall_acc_list) / len(overall_acc_list)
+    return overall_acc
+

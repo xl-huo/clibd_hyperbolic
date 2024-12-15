@@ -637,7 +637,7 @@ def load_dataloader_for_everything_in_5m(args, world_size=None, rank=None):
     return pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, seen_test_dataloader, unseen_test_dataloader, all_keys_dataloader, other_heldout_dataloader
 
 
-def load_dataloader(args, world_size=None, rank=None, for_pretrain=True):
+def load_dataloader(args, world_size=None, rank=None, for_pretrain=True, use_only_train_seen=False):
     length_dict = get_len_dict(args)
 
     return_language = True
@@ -683,7 +683,7 @@ def load_dataloader(args, world_size=None, rank=None, for_pretrain=True):
         if (
                 hasattr(args.model_config, "using_train_seen_for_pre_train")
                 and args.model_config.using_train_seen_for_pre_train
-        ):
+        ) and use_only_train_seen == False:
             pre_train_dataloader = construct_dataloader(
                 args,
                 "no_split_and_seen_train",

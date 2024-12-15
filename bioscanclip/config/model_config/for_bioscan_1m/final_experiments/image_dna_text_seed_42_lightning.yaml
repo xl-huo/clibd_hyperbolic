@@ -1,4 +1,4 @@
-batch_size: 500
+batch_size: 5
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-small_experiments
 using_train_seen_for_pre_train: true
@@ -49,10 +49,10 @@ fine_tuning_set:
 trainer:
   _target_: lightning.pytorch.Trainer
   accelerator: gpu
-  devices: 4
-  strategy: ddp
-  max_epochs: 80
-  num_sanity_val_steps: 5
+  devices: 1
+  strategy: ddp_find_unused_parameters_true
+  max_epochs: 30
+  num_sanity_val_steps: 0
   check_val_every_n_epoch: 1
   profiler: simple
   precision: 16-mixed
