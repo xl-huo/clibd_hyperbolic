@@ -139,7 +139,7 @@ def main_process(args):
 
     wandb_logger = None
     if args.activate_wandb:
-        wandb_logger = WandbLogger(project=args.model_config.wandb_project_name, name=args.model_config.trainer.model_output_name)
+        wandb_logger = WandbLogger(project=args.model_config.wandb_project_name, name=args.model_config.model_output_name)
         wandb_logger.log_hyperparams(args)
     k_list = [1, 3, 5]
     model = CLIBDLightning(args, len_train_dataloader=len(pre_train_dataloader), all_keys_dataloader=all_keys_dataloader,
