@@ -143,9 +143,9 @@ def main_process(args):
     if hasattr(args.model_config, 'pretrained_ckpt_path'):
         model.load_from_checkpoint_with_path(args.model_config.pretrained_ckpt_path)
 
-    progress_bar = MyProgressBar()
+    # progress_bar = MyProgressBar()
 
-    trainer = hydra.utils.instantiate(args.model_config.trainer, logger=wandb_logger, callbacks=[progress_bar])
+    trainer = hydra.utils.instantiate(args.model_config.trainer, logger=wandb_logger)
 
     folder_path = os.path.join(args.project_root_path, args.model_output_dir,
                                args.model_config.model_output_name, formatted_datetime)
@@ -156,7 +156,6 @@ def main_process(args):
     print("training...")
     trainer.fit(model=model, train_dataloaders=pre_train_dataloader, ckpt_path=None)
 
-    exit()
 
 
 @hydra.main(config_path="../bioscanclip/config", config_name="global_config", version_base="1.1")
