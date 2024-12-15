@@ -1,4 +1,4 @@
-batch_size: 5
+batch_size: 200
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-small_experiments
 using_train_seen_for_pre_train: true
