@@ -11,11 +11,20 @@ import torch.distributed as dist
 import os
 import datetime
 from omegaconf import DictConfig, OmegaConf, open_dict
+from pytorch_lightning.callbacks import ProgressBarBase
+
+
+class MyProgressBar(ProgressBarBase):
+    def get_metrics(self, trainer, pl_module):
+        items = super().get_metrics(trainer, pl_module)
+        items['loss'] = trainer.logged_metrics.get('train_loss', 0)
+        return items
 
 
 class CLIBDLightning(pl.LightningModule):
 
-    def __init__(self, args, len_train_dataloader=None, all_keys_dataloader=None, seen_val_dataloader=None, unseen_val_dataloader=None, k_list=None):
+    def __init__(self, args, len_train_dataloader=None, all_keys_dataloader=None, seen_val_dataloader=None,
+                 unseen_val_dataloader=None, k_list=None):
         super().__init__()
         self.args = args
         self.define_config()
@@ -112,7 +121,6 @@ class CLIBDLightning(pl.LightningModule):
         dict_for_wandb["best_epoch"] = self.current_epoch
 
         self.log_dict(dict_for_wandb)
-
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.model.parameters(), lr=self.lr)
