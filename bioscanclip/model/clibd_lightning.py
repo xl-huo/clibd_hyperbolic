@@ -96,12 +96,12 @@ class CLIBDLightning(pl.LightningModule):
         loss = self.criterion(image_features=image_output, dna_features=dna_output, text_features=language_output,
                               labels=label_for_train_batch, logit_scale=logit_scale)
 
-        self.log('train_loss', loss)
+        self.log('train_loss', loss, sync_dist=True)
 
         return loss
 
     def on_train_epoch_end(self):
-        device = next(self.model.parameters()).device
+        device = self.device
 
         acc_dict, pred_dict = eval_phase(
             self.model, device,
@@ -123,7 +123,7 @@ class CLIBDLightning(pl.LightningModule):
         dict_for_wandb["overall_acc"] = overall_acc
         dict_for_wandb["best_epoch"] = self.current_epoch
 
-        self.log_dict(dict_for_wandb)
+        self.log_dict(dict_for_wandb, sync_dist=True)
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(self.model.parameters(), lr=self.lr)
