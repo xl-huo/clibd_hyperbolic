@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torchtext.vocab import build_vocab_from_iterator
-from bioscanclip.util.util import PadSequence, KmerTokenizer, load_bert_model, KmerTokenizer_for_5m
+from bioscanclip.util.util import PadSequence, KmerTokenizer, load_bert_model
 from transformers import BertForMaskedLM, BertConfig, BertForTokenClassification
 from torchtext.vocab import vocab as build_vocab_from_dict
 
@@ -37,27 +37,7 @@ def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
     return bert_model.to(device)
 
 
-def get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M(k=4):
-    base_pairs = "ACGT"
-    special_tokens = ["[MASK]", "[UNK]"]
-    UNK_TOKEN = "[UNK]"
-    stride = k
-    max_len_of_token = 256
 
-    kmers = ["".join(kmer) for kmer in product(base_pairs, repeat=k)]
-    kmer_dict = dict.fromkeys(kmers, 1)
-    vocab = build_vocab_from_dict(kmer_dict, specials=special_tokens)
-    vocab.set_default_index(vocab[UNK_TOKEN])
-    vocab_size = len(vocab)
-    tokenizer = KmerTokenizer_for_5m(
-        k, vocab, stride=stride, padding=True, max_len=max_len_of_token
-    )
-
-    max_len = 660
-    pad = PadSequence(max_len)
-
-    sequence_pipeline = lambda x: [0, *vocab(tokenizer(pad(x)))]
-    return sequence_pipeline
 
 
 

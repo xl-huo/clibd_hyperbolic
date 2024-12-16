@@ -10,8 +10,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-from bioscanclip.model.dna_encoder import get_sequence_pipeline, \
-    get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M
+from bioscanclip.model.dna_encoder import get_sequence_pipeline
 from torch.utils.data.distributed import DistributedSampler
 import json
 import time
@@ -650,7 +649,7 @@ def load_dataloader(args, world_size=None, rank=None, for_pretrain=True):
     return_language = True
 
     if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
-        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+        sequence_pipeline = get_sequence_pipeline(k=4)
     else:
         sequence_pipeline = get_sequence_pipeline()
 
@@ -742,7 +741,7 @@ def load_bioscan_dataloader_all_small_splits(args, world_size=None, rank=None):
     return_language = True
 
     if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
-        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+        sequence_pipeline = get_sequence_pipeline(k=4)
     else:
         sequence_pipeline = get_sequence_pipeline()
 
@@ -1076,7 +1075,7 @@ def load_insect_dataloader_trainval(args, num_workers=8, shuffle_for_train_seen_
         specie_to_other_labels = json.load(file)
 
     if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
-        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+        sequence_pipeline = get_sequence_pipeline(k=4)
     else:
         sequence_pipeline = get_sequence_pipeline()
 
@@ -1101,7 +1100,7 @@ def load_insect_dataloader(args, world_size=None, rank=None, num_workers=8, load
         specie_to_other_labels = json.load(file)
 
     if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
-        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+        sequence_pipeline = get_sequence_pipeline(k=4)
     else:
         sequence_pipeline = get_sequence_pipeline()
 

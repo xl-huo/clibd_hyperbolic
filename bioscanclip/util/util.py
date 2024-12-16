@@ -93,35 +93,7 @@ class KmerTokenizer(object):
             tokens.append(k_mer)
         return tokens
 
-class KmerTokenizer_for_5m(object):
-    def __init__(self, k, vocabulary_mapper, stride=1, padding=False, max_len=660):
-        self.k = k
-        self.stride = stride
-        self.padding = padding
-        self.max_len = max_len
-        self.vocabulary_mapper = vocabulary_mapper
 
-    def __call__(self, dna_sequence, offset=0):
-        tokens = []
-        att_mask = [1] * (self.max_len // self.stride)
-        x = dna_sequence[offset:]
-        if self.padding:
-            if len(x) > self.max_len:
-                x = x[: self.max_len]
-            else:
-                att_mask[len(x) // self.stride:] = [0] * (len(att_mask) - len(x) // self.stride)
-                x = x + "N" * (self.max_len - len(x))
-        for i in range(0, len(x) - self.k + 1, self.stride):
-            k_mer = x[i: i + self.k]
-            tokens.append(k_mer)
-
-        tokens = torch.tensor(self.vocabulary_mapper(tokens), dtype=torch.int64)
-
-        # convert to list
-        tokens = tokens.tolist()
-        # att_mask = torch.tensor(att_mask, dtype=torch.int32)
-
-        return tokens
 
 
 def set_seed(seed=None):
