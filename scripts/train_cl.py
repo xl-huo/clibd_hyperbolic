@@ -32,6 +32,8 @@ def main_process(args):
     formatted_datetime = current_datetime.strftime("%Y-%m-%d_%H%M%S")
     args = copy.deepcopy(args)
 
+    torch.set_float32_matmul_precision('medium')
+
     with open_dict(args.model_config):
         if not hasattr(args.model_config, "for_open_clip"):
             args.model_config.for_open_clip = False
@@ -46,23 +48,6 @@ def main_process(args):
     #     pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
 
     pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
-
-    # optional configs
-    for_open_clip = False
-    if hasattr(args.model_config, 'for_open_clip') and args.model_config.for_open_clip:
-        for_open_clip = True
-
-    all_gather = False
-    if hasattr(args.model_config, 'all_gather') and args.model_config.all_gather:
-        all_gather = True
-
-    fix_temperature = None
-    if hasattr(args.model_config, 'fix_temperature') and args.model_config.fix_temperature:
-        fix_temperature = args.model_config.fix_temperature
-
-    enable_amp = False
-    if hasattr(args.model_config, 'amp') and args.model_config.amp:
-        enable_amp = True
 
     eval_skip_epoch = -1
     if hasattr(args.model_config, 'eval_skip_epoch') and args.model_config.eval_skip_epoch:
