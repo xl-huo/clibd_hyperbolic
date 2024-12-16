@@ -21,44 +21,6 @@ def print_when_rank_zero(message, rank=0):
         print(message)
 
 
-def save_prediction(pred_list, gt_list, json_path):
-    data = {
-        "gt_labels": gt_list,
-        "pred_labels": pred_list
-    }
-
-    with open(json_path, 'w') as json_file:
-        json.dump(data, json_file)
-
-
-def ddp_setup(rank: int, world_size: int, port):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = str(port)
-    torch.distributed.init_process_group("nccl", rank=rank, world_size=world_size)
-    torch.cuda.set_device(rank)
-
-
-def construct_key_dict(list_of_dict):
-    key_dict = {}
-
-    for curr_dict in list_of_dict:
-        for a_kind_of_feature_or_label in curr_dict.keys():
-            if a_kind_of_feature_or_label == "all_key_features" or a_kind_of_feature_or_label == "all_key_features_label":
-                key_dict[a_kind_of_feature_or_label] = None
-                continue
-
-            if a_kind_of_feature_or_label not in key_dict.keys():
-                key_dict[a_kind_of_feature_or_label] = curr_dict[a_kind_of_feature_or_label]
-            else:
-                if isinstance(curr_dict[a_kind_of_feature_or_label], list):
-                    key_dict[a_kind_of_feature_or_label] = key_dict[a_kind_of_feature_or_label] + curr_dict[
-                        a_kind_of_feature_or_label]
-                else:
-                    key_dict[a_kind_of_feature_or_label] = np.concatenate(
-                        (key_dict[a_kind_of_feature_or_label], curr_dict[a_kind_of_feature_or_label]), axis=0)
-
-    return key_dict
-
 
 def main_process(args):
     if args.debug_flag:

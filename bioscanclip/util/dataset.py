@@ -696,6 +696,7 @@ def load_dataloader(args, world_size=None, rank=None, for_pretrain=True, use_onl
                 rank=rank,
                 shuffle=True,
             )
+            print("Using both no_split and train_seen for pre-training")
         else:
             pre_train_dataloader = construct_dataloader(
                 args,
