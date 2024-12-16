@@ -116,6 +116,9 @@ class KmerTokenizer_for_5m(object):
             tokens.append(k_mer)
 
         tokens = torch.tensor(self.vocabulary_mapper(tokens), dtype=torch.int64)
+
+        # convert to list
+        tokens = tokens.tolist()
         # att_mask = torch.tensor(att_mask, dtype=torch.int32)
 
         return tokens
