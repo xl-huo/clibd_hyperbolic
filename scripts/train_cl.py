@@ -68,8 +68,6 @@ def main_process(args):
     if hasattr(args.model_config, 'eval_skip_epoch') and args.model_config.eval_skip_epoch:
         eval_skip_epoch = args.model_config.eval_skip_epoch
 
-    scaler = GradScaler(enabled=enable_amp)
-
     # Load MODEL
 
     print("Initialize model...")

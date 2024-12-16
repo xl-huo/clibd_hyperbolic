@@ -144,17 +144,11 @@ class ClipLoss(nn.Module):
         all_labels = construct_label_metrix(all_labels).to(device)
         if self.world_size > 1:
             if image_features is not None:
-                all_image_features = gather_features(
-                    image_features,
-                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+                all_image_features = torch.cat(torch.distributed.nn.all_gather(image_features), dim=0)
             if dna_features is not None:
-                all_dna_features = gather_features(
-                    dna_features,
-                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+                all_dna_features = torch.cat(torch.distributed.nn.all_gather(dna_features), dim=0)
             if text_features is not None:
-                all_text_features = gather_features(
-                    text_features,
-                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+                all_text_features = torch.cat(torch.distributed.nn.all_gather(text_features), dim=0)
 
         feature_list = [all_image_features, all_dna_features, all_text_features]
         feature_list = [item for item in feature_list if item is not None]
