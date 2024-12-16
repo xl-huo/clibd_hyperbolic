@@ -66,7 +66,7 @@ class CLIBDLightning(pl.LightningModule):
 
         self.lr = getattr(self.args.model_config.lr_config, 'lr', 0.001)
         world_size = dist.get_world_size() if dist.is_initialized() else 1
-        self.lr = scale_learning_rate(lr=self.lr, batch_size=world_size)
+        self.lr = scale_learning_rate(lr=self.lr, world_size=world_size)
         current_datetime = datetime.datetime.now()
         formatted_datetime = current_datetime.strftime("%Y-%m-%d_%H%M%S")
 

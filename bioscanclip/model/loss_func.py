@@ -114,8 +114,6 @@ class ClipLoss(nn.Module):
             local_loss=False,
             gather_with_grad=False,
             cache_labels=False,
-            rank=0,
-            world_size=1,
             use_horovod=False,
             criterion=nn.CrossEntropyLoss(),
             bind_to=None,
@@ -124,11 +122,9 @@ class ClipLoss(nn.Module):
         super().__init__()
         self.local_loss = local_loss
         self.gather_with_grad = gather_with_grad
-        self.rank = rank
-        self.world_size = world_size
+
         self.use_horovod = use_horovod
         self.criterion = criterion
-
         # cache state
         self.prev_num_logits = 0
         self.labels = {}
@@ -142,17 +138,13 @@ class ClipLoss(nn.Module):
         all_text_features = text_features
         all_labels = torch.cat(torch.distributed.nn.all_gather(labels), dim=0)
         all_labels = construct_label_metrix(all_labels).to(device)
-        if self.world_size > 1:
-            if image_features is not None:
-                all_image_features = torch.cat(torch.distributed.nn.all_gather(image_features), dim=0)
-            if dna_features is not None:
-                all_dna_features = torch.cat(torch.distributed.nn.all_gather(dna_features), dim=0)
-            if text_features is not None:
-                all_text_features = torch.cat(torch.distributed.nn.all_gather(text_features), dim=0)
-        print(f"shape of all_image_features: {all_image_features.shape}")
-        print(f"shape of all_dna_features: {all_dna_features.shape}")
-        print(f"shape of all_text_features: {all_text_features.shape}")
-        exit()
+        if image_features is not None:
+            all_image_features = torch.cat(torch.distributed.nn.all_gather(image_features), dim=0)
+        if dna_features is not None:
+            all_dna_features = torch.cat(torch.distributed.nn.all_gather(dna_features), dim=0)
+        if text_features is not None:
+            all_text_features = torch.cat(torch.distributed.nn.all_gather(text_features), dim=0)
+
 
         feature_list = [all_image_features, all_dna_features, all_text_features]
         feature_list = [item for item in feature_list if item is not None]
