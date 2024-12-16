@@ -39,16 +39,6 @@ def tokenize_dna_sequence(pipeline, dna_input):
     return list_of_output
 
 
-def prepare(dataset, rank, world_size, batch_size=32, pin_memory=False, num_workers=0, shuffle=False):
-    sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=shuffle, drop_last=True)
-
-    dataloader = DataLoader(
-        dataset, batch_size=batch_size, pin_memory=pin_memory, num_workers=num_workers, sampler=sampler, drop_last=True
-    )
-
-    return dataloader
-
-
 def get_array_of_label_dicts(hdf5_inputs_path, split):
     hdf5_split_group = h5py.File(hdf5_inputs_path, "r", libver="latest")[split]
     np_order = np.array([item.decode("utf-8") for item in hdf5_split_group["order"][:]])
@@ -431,23 +421,13 @@ def construct_dataloader(
         num_workers = args.model_config.num_workers
 
     if for_pre_train:
-        if world_size is not None and rank is not None:
-            dataloader = prepare(
-                dataset,
-                rank,
-                batch_size=args.model_config.batch_size,
-                world_size=world_size,
-                num_workers=num_workers,
-                shuffle=shuffle,
-            )
-        else:
-            dataloader = DataLoader(
-                dataset,
-                batch_size=args.model_config.batch_size,
-                shuffle=shuffle,
-                drop_last=True,
-                num_workers=num_workers,
-            )
+        dataloader = DataLoader(
+            dataset,
+            batch_size=args.model_config.batch_size,
+            shuffle=shuffle,
+            drop_last=True,
+            num_workers=num_workers,
+        )
     else:
         dataloader = DataLoader(
             dataset, batch_size=args.model_config.batch_size, num_workers=num_workers, shuffle=shuffle
@@ -542,6 +522,7 @@ def load_bioscan_dataloader_with_train_seen_and_separate_keys(args, world_size=N
         val_unseen_keys_dataloader,
         test_unseen_keys_dataloader,
     )
+
 
 def load_dataloader_for_everything_in_5m(args, world_size=None, rank=None):
     length_dict = get_len_dict(args)
@@ -1135,14 +1116,8 @@ def load_insect_dataloader(args, world_size=None, rank=None, num_workers=8, load
             image_hdf5_path=args.insect_data.path_to_image_hdf5,
             dna_transforms=sequence_pipeline, for_training=False, for_open_clip=args.model_config.for_open_clip
         )
-        if rank is None:
-            print(rank)
-            insect_train_dataloader = DataLoader(train_dataset, batch_size=args.model_config.batch_size,
-                                                 num_workers=num_workers, shuffle=True)
-        else:
-            insect_train_dataloader = prepare(train_dataset, rank, batch_size=args.model_config.batch_size,
-                                              world_size=world_size,
-                                              num_workers=num_workers, shuffle=True)
+        insect_train_dataloader = DataLoader(train_dataset, batch_size=args.model_config.batch_size,
+                                             num_workers=num_workers, shuffle=True)
 
         insect_train_dataloader_for_key = DataLoader(train_dataset_for_key, batch_size=args.model_config.batch_size,
                                                      num_workers=num_workers, shuffle=shuffle_for_train_seen_key)
