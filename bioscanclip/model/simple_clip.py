@@ -261,7 +261,7 @@ def load_clip_model(args, device=None):
     if hasattr(args.model_config, 'dna'):
         if args.model_config.dna.input_type == "sequence":
             if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
-                barcode_BERT_ckpt = args.BarcodeBERT_checkpoint
+                barcode_BERT_ckpt = args.barcodeBERT_checkpoint
                 if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
                     barcode_BERT_ckpt = args.model_config.barcodeBERT_ckpt_path
                 pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
