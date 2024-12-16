@@ -33,7 +33,7 @@ insect_data:
   image_dir: ${insect_data.dir}/images
   species_to_other: ${insect_data.dir}/specie_to_other_labels.json
 save_ckpt: true
-bioscan_bert_checkpoint: ${project_root_path}/ckpt/BarcodeBERT/5_mer/model_41.pth
+barcodeBERT_checkpoint: ${project_root_path}/ckpt/BarcodeBERT/5_mer/model_41.pth
 current_version: 0.1
 model_output_dir: ${project_root_path}/ckpt/bioscan_clip
 

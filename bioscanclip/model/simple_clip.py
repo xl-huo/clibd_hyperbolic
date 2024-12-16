@@ -259,27 +259,13 @@ def load_clip_model(args, device=None):
 
     # For DNA part
     if hasattr(args.model_config, 'dna'):
-        # if hasattr(args.model_config.dna, 'freeze') and args.model_config.dna.freeze:
-        #     dna_encoder = Freeze_DNA_Encoder()
-        # elif args.model_config.dna.input_type == "sequence":
-        #     if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
-        #         pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
-        #             bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
-        #         if disable_lora:
-        #             dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
-        #                                             num_classes=args.model_config.output_dim, lora_layer=[])
-        #         else:
-        #             dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
-        #                                             num_classes=args.model_config.output_dim)
-        # else:
-        #     dna_encoder = MLPEncoder(input_dim=args.model_config.dna.input_dim,
-        #                              hidden_dim=args.model_config.dna.hidden_dim,
-        #                              output_dim=args.model_config.output_dim)
-        #
         if args.model_config.dna.input_type == "sequence":
             if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
+                barcode_BERT_ckpt = args.BarcodeBERT_checkpoint
+                if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
+                    barcode_BERT_ckpt = args.model_config.barcodeBERT_ckpt_path
                 pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
-                    bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
+                    bioscan_bert_checkpoint=barcode_BERT_ckpt)
                 if disable_lora:
                     dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
                                                     num_classes=args.model_config.output_dim, lora_layer=[])
