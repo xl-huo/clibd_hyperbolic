@@ -461,7 +461,7 @@ def load_bioscan_dataloader_with_train_seen_and_separate_keys(args, world_size=N
     return_language = True
 
     if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
-        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+        sequence_pipeline = get_sequence_pipeline(k=4)
     else:
         sequence_pipeline = get_sequence_pipeline()
 
@@ -552,7 +552,7 @@ def load_dataloader_for_everything_in_5m(args, world_size=None, rank=None):
     return_language = True
 
     if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
-        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+        sequence_pipeline = get_sequence_pipeline(k=4)
     else:
         sequence_pipeline = get_sequence_pipeline()
 

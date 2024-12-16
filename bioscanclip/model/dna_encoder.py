@@ -18,12 +18,12 @@ def remove_extra_pre_fix(state_dict):
         new_state_dict[key] = value
     return new_state_dict
 
-def load_pre_trained_bioscan_bert_trained_with_5m(bioscan_bert_checkpoint, k=5):
+def load_pre_trained_bioscan_bert_trained_with_5m(bioscan_bert_checkpoint, k=4):
     ckpt = torch.load(bioscan_bert_checkpoint, map_location=device)
     model_ckpt = remove_extra_pre_fix(ckpt["model"])
     bert_config = BertConfig(**ckpt["bert_config"])
     model = BertForMaskedLM(bert_config)
-    load_bert_model(model, model_ckpt)
+    model.load_state_dict(model_ckpt)
     return model.to(device)
 
 def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
