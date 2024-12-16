@@ -10,7 +10,8 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-from bioscanclip.model.dna_encoder import get_sequence_pipeline
+from bioscanclip.model.dna_encoder import get_sequence_pipeline, \
+    get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M
 from torch.utils.data.distributed import DistributedSampler
 import json
 import time
@@ -460,7 +461,10 @@ def load_bioscan_dataloader_with_train_seen_and_separate_keys(args, world_size=N
 
     return_language = True
 
-    sequence_pipeline = get_sequence_pipeline()
+    if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
+        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+    else:
+        sequence_pipeline = get_sequence_pipeline()
 
     train_seen_dataloader = construct_dataloader(
         args,
@@ -548,7 +552,10 @@ def load_dataloader_for_everything_in_5m(args, world_size=None, rank=None):
 
     return_language = True
 
-    sequence_pipeline = get_sequence_pipeline()
+    if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
+        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+    else:
+        sequence_pipeline = get_sequence_pipeline()
 
     pre_train_dataloader = construct_dataloader(
         args,
@@ -642,7 +649,10 @@ def load_dataloader(args, world_size=None, rank=None, for_pretrain=True):
 
     return_language = True
 
-    sequence_pipeline = get_sequence_pipeline()
+    if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
+        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+    else:
+        sequence_pipeline = get_sequence_pipeline()
 
     seen_val_dataloader = construct_dataloader(
         args,
@@ -731,7 +741,10 @@ def load_bioscan_dataloader_all_small_splits(args, world_size=None, rank=None):
 
     return_language = True
 
-    sequence_pipeline = get_sequence_pipeline()
+    if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
+        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+    else:
+        sequence_pipeline = get_sequence_pipeline()
 
     if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "bioscan_5m":
         train_seen_dataloader = construct_dataloader(
@@ -1062,7 +1075,10 @@ def load_insect_dataloader_trainval(args, num_workers=8, shuffle_for_train_seen_
     with open(filename, 'r') as file:
         specie_to_other_labels = json.load(file)
 
-    sequence_pipeline = get_sequence_pipeline()
+    if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
+        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+    else:
+        sequence_pipeline = get_sequence_pipeline()
 
     trainval_dataset = INSECTDataset(
         args.insect_data.path_to_att_splits_mat, args.insect_data.path_to_res_101_mat,
@@ -1084,7 +1100,10 @@ def load_insect_dataloader(args, world_size=None, rank=None, num_workers=8, load
     with open(filename, 'r') as file:
         specie_to_other_labels = json.load(file)
 
-    sequence_pipeline = get_sequence_pipeline()
+    if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
+        sequence_pipeline = get_sequence_pipeline_for_barcodeBERT_pre_trained_with_5M()
+    else:
+        sequence_pipeline = get_sequence_pipeline()
 
     if load_all_in_one:
         all_dataset = INSECTDataset(
