@@ -852,8 +852,8 @@ def convert_acc_dict_to_wandb_dict(acc_dict):
     for split, split_dict in acc_dict.items():
         for type_of_acc, type_of_acc_dict in split_dict.items():
             for k, k_dict in type_of_acc_dict.items():
-                for level, curr_acc in type_of_acc_dict.items():
-                    dict_for_wandb[f"Image to Image_{split} {type_of_acc} top-{k} {level} level"] = curr_acc
+                for taxonomy_level, taxonomy_level_acc in curr_acc.items():
+                    dict_for_wandb[f"Image to Image_{split} {type_of_acc} top-{k} {taxonomy_level} level"] = taxonomy_level_acc
 
     return dict_for_wandb
 
