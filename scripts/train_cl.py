@@ -2,31 +2,18 @@ import copy
 import datetime
 import json
 import os
+
 import hydra
 import numpy as np
-
 import torch
-import torch.multiprocessing as mp
-import torch.nn as nn
-import torch.optim as optim
-import torch.optim.lr_scheduler as lr_scheduler
-from torch.cuda.amp import GradScaler
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-import wandb
 from omegaconf import DictConfig, OmegaConf, open_dict
-
-from bioscanclip.epoch.train_epoch import train_epoch
-from inference_and_eval import get_features_and_label, inference_and_print_result
-from bioscanclip.model.loss_func import ContrastiveLoss, ClipLoss
-from bioscanclip.model.simple_clip import load_clip_model
-from bioscanclip.util.util import set_seed
-from bioscanclip.util.dataset import load_dataloader, load_insect_dataloader
-from bioscanclip.util.util import scale_learning_rate
-from bioscanclip.model.clibd_lightning import CLIBDLightning
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.strategies import DDPStrategy
-from bioscanclip.model.clibd_lightning import MyProgressBar
+from torch.cuda.amp import GradScaler
+
+from bioscanclip.model.clibd_lightning import CLIBDLightning
+from bioscanclip.util.dataset import load_dataloader
+from bioscanclip.util.util import set_seed
 
 
 def print_when_rank_zero(message, rank=0):
@@ -96,11 +83,7 @@ def main_process(args):
     # else:
     #     pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
 
-    # pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
-
-    # Debug with smaller dataset
-    pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args,
-                                                                                                            for_pretrain=False)
+    pre_train_dataloader, seen_val_dataloader, unseen_val_dataloader, all_keys_dataloader = load_dataloader(args)
 
     # optional configs
     for_open_clip = False

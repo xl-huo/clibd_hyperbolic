@@ -1,5 +1,5 @@
 import torch
-import hydra
+
 import lightning.pytorch as pl
 from bioscanclip.model.simple_clip import load_clip_model
 from bioscanclip.model.loss_func import ClipLoss, ContrastiveLoss
