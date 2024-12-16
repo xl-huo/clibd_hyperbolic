@@ -9,16 +9,22 @@ from transformers import BertConfig, BertForMaskedLM
 from bioscanclip.util.util import PadSequence, KmerTokenizer, load_bert_model
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+def remove_extra_pre_fix(state_dict):
+    new_state_dict = {}
+    for key, value in state_dict.items():
+        if key.startswith("module."):
+            key = key[7:]
+        new_state_dict[key] = value
+    return new_state_dict
 
-
-def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
+def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5, remove_extra_prefix=False):
     kmer_iter = (["".join(kmer)] for kmer in product("ACGT", repeat=k))
     vocab = build_vocab_from_iterator(kmer_iter, specials=["<MASK>", "<CLS>", "<UNK>"])
     vocab.set_default_index(vocab["<UNK>"])
     vocab_size = len(vocab)
     configuration = BertConfig(vocab_size=vocab_size, output_hidden_states=True)
     bert_model = BertForMaskedLM(configuration)
-    load_bert_model(bert_model, bioscan_bert_checkpoint)
+    load_bert_model(bert_model, bioscan_bert_checkpoint, remove_extra_prefix=remove_extra_prefix)
     return bert_model.to(device)
 
 
