@@ -262,10 +262,12 @@ def load_clip_model(args, device=None):
         if args.model_config.dna.input_type == "sequence":
             if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
                 barcode_BERT_ckpt = args.barcodeBERT_checkpoint
+                k = 5
                 if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
                     barcode_BERT_ckpt = args.model_config.barcodeBERT_ckpt_path
+                    k=4
                 pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
-                    bioscan_bert_checkpoint=barcode_BERT_ckpt)
+                    bioscan_bert_checkpoint=barcode_BERT_ckpt, k=k)
                 if disable_lora:
                     dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
                                                     num_classes=args.model_config.output_dim, lora_layer=[])
