@@ -17,14 +17,14 @@ def remove_extra_pre_fix(state_dict):
         new_state_dict[key] = value
     return new_state_dict
 
-def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5, remove_extra_prefix=False):
+def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
     kmer_iter = (["".join(kmer)] for kmer in product("ACGT", repeat=k))
     vocab = build_vocab_from_iterator(kmer_iter, specials=["<MASK>", "<CLS>", "<UNK>"])
     vocab.set_default_index(vocab["<UNK>"])
     vocab_size = len(vocab)
     configuration = BertConfig(vocab_size=vocab_size, output_hidden_states=True)
     bert_model = BertForMaskedLM(configuration)
-    load_bert_model(bert_model, bioscan_bert_checkpoint, remove_extra_prefix=remove_extra_prefix)
+    load_bert_model(bert_model, bioscan_bert_checkpoint)
     return bert_model.to(device)
 
 
