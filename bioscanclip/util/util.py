@@ -18,6 +18,7 @@ import h5py
 from PIL import Image
 import io
 from torchtext.vocab import vocab as build_vocab_from_dict
+from itertools import product
 
 LEVELS = ["order", "family", "genus", "species"]
 All_TYPE_OF_FEATURES_OF_QUERY = [
