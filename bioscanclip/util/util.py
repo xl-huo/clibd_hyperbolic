@@ -111,7 +111,7 @@ class KmerTokenizerFor5M(object):
 
 def load_kmer_tokenizer_for_barcodeBERT_pre_trained_on_5M(args, kmer=4):
     base_pairs = "ACGT"
-    self.special_tokens = ["[MASK]", "[UNK]"]  # ["[MASK]", "[CLS]", "[SEP]", "[PAD]", "[EOS]", "[UNK]"]
+    special_tokens = ["[MASK]", "[UNK]"]  # ["[MASK]", "[CLS]", "[SEP]", "[PAD]", "[EOS]", "[UNK]"]
     UNK_TOKEN = "[UNK]"
     max_len = 660
 
