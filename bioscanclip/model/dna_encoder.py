@@ -10,22 +10,6 @@ from bioscanclip.util.util import PadSequence, KmerTokenizer, load_bert_model
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-def remove_extra_pre_fix(state_dict):
-    new_state_dict = {}
-    for key, value in state_dict.items():
-        if key.startswith("module."):
-            key = key[7:]
-        new_state_dict[key] = value
-    return new_state_dict
-
-def load_pre_trained_bioscan_bert_trained_with_5m(bioscan_bert_checkpoint, k=4):
-    ckpt = torch.load(bioscan_bert_checkpoint, map_location=device)
-    model_ckpt = remove_extra_pre_fix(ckpt["model"])
-    bert_config = BertConfig(**ckpt["bert_config"])
-    model = BertForMaskedLM(bert_config)
-    model.load_state_dict(model_ckpt, strict=False)
-    return model.to(device)
-
 
 def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
     kmer_iter = (["".join(kmer)] for kmer in product("ACGT", repeat=k))
@@ -117,13 +101,7 @@ class LoRA_barcode_bert(nn.Module):
             nn.init.zeros_(w_B.weight)
 
     def forward(self, x: Tensor) -> Tensor:
-        # if isinstance(self.dna_encoder.lora_barcode_bert, BertForMaskedLM):
-        #     sequences = x[0]
-        #     att_mask = x[1]
-        #     labels = x[2]
-        #     return self.lora_barcode_bert(sequences, attention_mask=att_mask, labels=labels).hidden_states[-1].logits.softmax(dim=-1).mean(dim=1)
-        # else:
-        #     return self.lora_barcode_bert(x).logits.softmax(dim=-1).mean(dim=1)
+
         return self.lora_barcode_bert(x).logits.softmax(dim=-1).mean(dim=1)
 
 

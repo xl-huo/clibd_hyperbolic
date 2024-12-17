@@ -3,8 +3,7 @@ import timm
 import torch.nn as nn
 from bioscanclip.model.mlp import MLPEncoder
 from bioscanclip.model.image_encoder import LoRA_ViT_timm, LoRA_ViT_OpenCLIP
-from bioscanclip.model.dna_encoder import load_pre_trained_bioscan_bert, LoRA_barcode_bert, Freeze_DNA_Encoder, \
-    load_pre_trained_bioscan_bert_trained_with_5m
+from bioscanclip.model.dna_encoder import load_pre_trained_bioscan_bert, LoRA_barcode_bert, Freeze_DNA_Encoder
 from bioscanclip.model.language_encoder import load_pre_trained_bert, LoRA_bert, LoRA_bert_OpenCLIP
 from bioscanclip.util.util import add_lora_layer_to_open_clip
 import numpy as np
@@ -190,22 +189,8 @@ def load_clip_model(args, device=None):
     if hasattr(args.model_config, 'dna'):
         if args.model_config.dna.input_type == "sequence":
             if dna_model == "barcode_bert" or dna_model == "lora_barcode_bert":
-
-                if hasattr(args.model_config, "barcodeBERT_ckpt_path"):
-                    barcode_BERT_ckpt = args.model_config.barcodeBERT_ckpt_path
-                    k=4
-                    pre_trained_barcode_bert = load_pre_trained_bioscan_bert_trained_with_5m(
-                        bioscan_bert_checkpoint=barcode_BERT_ckpt, k=k)
-
-
-                else:
-                    barcode_BERT_ckpt = args.barcodeBERT_checkpoint
-                    k = 5
-                    pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
-                        bioscan_bert_checkpoint=barcode_BERT_ckpt, k=k)
-
-
-
+                pre_trained_barcode_bert = load_pre_trained_bioscan_bert(
+                    bioscan_bert_checkpoint=args.bioscan_bert_checkpoint)
                 if disable_lora:
                     dna_encoder = LoRA_barcode_bert(model=pre_trained_barcode_bert, r=4,
                                                     num_classes=args.model_config.output_dim, lora_layer=[])

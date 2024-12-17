@@ -17,8 +17,6 @@ from omegaconf import DictConfig, OmegaConf
 import h5py
 from PIL import Image
 import io
-from torchtext.vocab import vocab as build_vocab_from_dict
-from itertools import product
 
 LEVELS = ["order", "family", "genus", "species"]
 All_TYPE_OF_FEATURES_OF_QUERY = [
@@ -82,54 +80,6 @@ class PadSequence(object):
         else:
             return dna_sequence + "N" * (self.max_len - len(dna_sequence))
 
-class KmerTokenizerFor5M(object):
-    def __init__(self, k, vocabulary_mapper, stride=1, padding=False, max_len=660):
-        self.k = k
-        self.stride = stride
-        self.padding = padding
-        self.max_len = max_len
-        self.vocabulary_mapper = vocabulary_mapper
-
-    def __call__(self, dna_sequence, offset=0):
-        tokens = []
-        att_mask = [1] * (self.max_len // self.stride)
-        x = dna_sequence[offset:]
-        if self.padding:
-            if len(x) > self.max_len:
-                x = x[: self.max_len]
-            else:
-                att_mask[len(x) // self.stride :] = [0] * (len(att_mask) - len(x) // self.stride)
-                x = x + "N" * (self.max_len - len(x))
-        for i in range(0, len(x) - self.k + 1, self.stride):
-            k_mer = x[i : i + self.k]
-            tokens.append(k_mer)
-
-        tokens = torch.tensor(self.vocabulary_mapper(tokens), dtype=torch.int64)
-        att_mask = torch.tensor(att_mask, dtype=torch.int32)
-
-        return tokens, att_mask
-
-
-def load_kmer_tokenizer_for_barcodeBERT_pre_trained_on_5M(args, kmer=4):
-    base_pairs = "ACGT"
-    special_tokens = ["[MASK]", "[UNK]"]  # ["[MASK]", "[CLS]", "[SEP]", "[PAD]", "[EOS]", "[UNK]"]
-    UNK_TOKEN = "[UNK]"
-    max_len = 660
-
-    kmers = ["".join(kmer) for kmer in product(base_pairs, repeat=k_mer)]
-
-    # Separate between good (idx < 4**k) and bad k-mers (idx > 4**k) for prediction
-
-    kmer_dict = dict.fromkeys(kmers, 1)
-    vocab = build_vocab_from_dict(kmer_dict, specials=special_tokens)
-    vocab.set_default_index(vocab[UNK_TOKEN])
-    vocab_size = len(vocab)
-    tokenizer = KmerTokenizerFor5M(
-        k_mer, vocab, stride=stride, padding=True, max_len=max_len
-    )
-    return tokenizer
-
-
 
 class KmerTokenizer(object):
     def __init__(self, k, stride=1):
@@ -142,8 +92,6 @@ class KmerTokenizer(object):
             k_mer = dna_sequence[i : i + self.k]
             tokens.append(k_mer)
         return tokens
-
-
 
 
 def set_seed(seed=None):
@@ -171,8 +119,6 @@ def load_bert_model(bert_model, path_to_ckpt):
     state_dict = torch.load(path_to_ckpt, map_location=torch.device("cpu"))
     state_dict = remove_extra_pre_fix(state_dict)
     bert_model.load_state_dict(state_dict)
-
-
 
 
 def print_result(
