@@ -1,7 +1,6 @@
 from tqdm import tqdm
 import numpy as np
 import torch.nn.functional as F
-from bioscanclip.epoch.inference_epoch import convert_label_dict_to_list_of_dict
 import torch
 
 
