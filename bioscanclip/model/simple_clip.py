@@ -3,7 +3,8 @@ import timm
 import torch.nn as nn
 from bioscanclip.model.mlp import MLPEncoder
 from bioscanclip.model.image_encoder import LoRA_ViT_timm, LoRA_ViT_OpenCLIP
-from bioscanclip.model.dna_encoder import load_pre_trained_bioscan_bert, LoRA_barcode_bert, Freeze_DNA_Encoder, load_pre_trained_bioscan_bert_trained_with_5m
+from bioscanclip.model.dna_encoder import load_pre_trained_bioscan_bert, LoRA_barcode_bert, Freeze_DNA_Encoder, \
+    load_pre_trained_bioscan_bert_trained_with_5m
 from bioscanclip.model.language_encoder import load_pre_trained_bert, LoRA_bert, LoRA_bert_OpenCLIP
 from bioscanclip.util.util import add_lora_layer_to_open_clip
 import numpy as np
