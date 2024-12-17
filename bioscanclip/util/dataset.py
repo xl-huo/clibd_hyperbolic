@@ -112,7 +112,7 @@ class Dataset_for_CL(Dataset):
             for_open_clip=False,
     ):
         if hasattr(args.model_config, "dataset") and args.model_config.dataset == "bioscan_5m":
-            if hasattr(args.modelsequence_pipeline_config, "train_with_small_subset") and args.model_config.train_with_small_subset:
+            if hasattr(args.model_config, "train_with_small_subset") and args.model_config.train_with_small_subset:
                 self.hdf5_inputs_path = args.bioscan_5m_data.path_to_smaller_hdf5_data
             else:
                 self.hdf5_inputs_path = args.bioscan_5m_data.path_to_hdf5_data
