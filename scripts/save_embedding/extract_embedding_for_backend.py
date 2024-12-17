@@ -13,7 +13,7 @@ from bioscanclip.util.util import get_features_and_label
 from tqdm import tqdm
 import numpy as np
 import torch.nn.functional as F
-from bioscanclip.epoch.eval_epoch import convert_label_dict_to_list_of_dict
+from bioscanclip.epoch.inference_epoch import convert_label_dict_to_list_of_dict
 import torch
 
 PLOT_FOLDER = "html_plots"

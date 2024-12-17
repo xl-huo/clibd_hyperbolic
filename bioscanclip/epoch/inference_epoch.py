@@ -1,8 +1,43 @@
 from tqdm import tqdm
 import numpy as np
 import torch.nn.functional as F
-from bioscanclip.epoch.eval_epoch import convert_label_dict_to_list_of_dict
+from bioscanclip.epoch.inference_epoch import convert_label_dict_to_list_of_dict
 import torch
+
+
+def convert_label_dict_to_list_of_dict(label_batch):
+    order = label_batch['order']
+
+    family = label_batch['family']
+    genus = label_batch['genus']
+    species = label_batch['species']
+
+    list_of_dict = [
+        {'order': o, 'family': f, 'genus': g, 'species': s}
+        for o, f, g, s in zip(order, family, genus, species)
+    ]
+
+    return list_of_dict
+
+def show_confusion_metrix(ground_truth_labels, predicted_labels, path_to_save=None, labels=None, normalize=True):
+    plt.figure(figsize=(12, 12))
+    if labels is None:
+        labels = list(set(ground_truth_labels))
+    conf_matrix = confusion_matrix(ground_truth_labels, predicted_labels, labels=labels)
+    if normalize:
+        conf_matrix = conf_matrix.astype('float') / conf_matrix.sum(axis=1)[:, np.newaxis]
+
+    sns.heatmap(conf_matrix, annot=True, fmt=".2f", cmap="Blues", cbar=False,xticklabels=labels,
+                yticklabels=labels)
+    plt.xticks(rotation=30)
+    plt.xlabel("Predicted")
+    plt.ylabel("Ground Truth")
+    plt.title("Confusion Matrix")
+
+    if path_to_save is not None:
+        plt.savefig(path_to_save)
+    else:
+        plt.show()
 
 
 def get_feature_and_label(dataloader, model, device, for_open_clip=False, multi_gpu=False):

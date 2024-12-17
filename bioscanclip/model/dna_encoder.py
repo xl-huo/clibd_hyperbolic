@@ -117,7 +117,13 @@ class LoRA_barcode_bert(nn.Module):
             nn.init.zeros_(w_B.weight)
 
     def forward(self, x: Tensor) -> Tensor:
-
+        # if isinstance(self.dna_encoder.lora_barcode_bert, BertForMaskedLM):
+        #     sequences = x[0]
+        #     att_mask = x[1]
+        #     labels = x[2]
+        #     return self.lora_barcode_bert(sequences, attention_mask=att_mask, labels=labels).hidden_states[-1].logits.softmax(dim=-1).mean(dim=1)
+        # else:
+        #     return self.lora_barcode_bert(x).logits.softmax(dim=-1).mean(dim=1)
         return self.lora_barcode_bert(x).logits.softmax(dim=-1).mean(dim=1)
 
 
