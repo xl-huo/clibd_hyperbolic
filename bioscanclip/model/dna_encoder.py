@@ -5,26 +5,11 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torchtext.vocab import build_vocab_from_iterator
+from transformers import BertConfig, BertForMaskedLM
 from bioscanclip.util.util import PadSequence, KmerTokenizer, load_bert_model
-from transformers import BertForMaskedLM, BertConfig, BertForTokenClassification
-from torchtext.vocab import vocab as build_vocab_from_dict
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-def remove_extra_pre_fix(state_dict):
-    new_state_dict = {}
-    for key, value in state_dict.items():
-        if key.startswith("module."):
-            key = key[7:]
-        new_state_dict[key] = value
-    return new_state_dict
 
-def load_pre_trained_bioscan_bert_trained_with_5m(bioscan_bert_checkpoint, k=4):
-    ckpt = torch.load(bioscan_bert_checkpoint, map_location=device)
-    model_ckpt = remove_extra_pre_fix(ckpt["model"])
-    bert_config = BertConfig(**ckpt["bert_config"])
-    model = BertForTokenClassification(bert_config)
-    model.load_state_dict(model_ckpt)
-    return model.to(device)
 
 def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
     kmer_iter = (["".join(kmer)] for kmer in product("ACGT", repeat=k))
@@ -35,11 +20,6 @@ def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
     bert_model = BertForMaskedLM(configuration)
     load_bert_model(bert_model, bioscan_bert_checkpoint)
     return bert_model.to(device)
-
-
-
-
-
 
 
 def get_sequence_pipeline(k=5):
