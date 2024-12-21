@@ -6,20 +6,26 @@ import torch.nn as nn
 from torch import Tensor
 from torchtext.vocab import build_vocab_from_iterator
 from transformers import BertConfig, BertForMaskedLM
-from bioscanclip.util.util import PadSequence, KmerTokenizer, load_bert_model
+from bioscanclip.util.util import PadSequence, KmerTokenizer, load_bert_model, remove_extra_pre_fix
+
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
-    kmer_iter = (["".join(kmer)] for kmer in product("ACGT", repeat=k))
-    vocab = build_vocab_from_iterator(kmer_iter, specials=["<MASK>", "<CLS>", "<UNK>"])
-    vocab.set_default_index(vocab["<UNK>"])
-    vocab_size = len(vocab)
-    configuration = BertConfig(vocab_size=vocab_size, output_hidden_states=True)
-    bert_model = BertForMaskedLM(configuration)
-    load_bert_model(bert_model, bioscan_bert_checkpoint)
-    return bert_model.to(device)
+def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint):
+    print(f"\nLoading model from {bioscan_bert_checkpoint}")
+    ckpt = torch.load(bioscan_bert_checkpoint, map_location=device)
+    model_ckpt = remove_extra_pre_fix(ckpt["model"])
+
+    assert "bert_config" in ckpt  # You may be trying to load an old checkpoint
+
+    bert_config = BertConfig(**ckpt["bert_config"])
+    model = BertForMaskedLM(bert_config)
+    if "bert.embeddings.position_ids" in model_ckpt:
+        model_ckpt.pop("bert.embeddings.position_ids")
+
+    model.load_state_dict(model_ckpt)
+    return model
 
 
 def get_sequence_pipeline(k=5):
@@ -100,9 +106,10 @@ class LoRA_barcode_bert(nn.Module):
         for w_B in self.w_Bs:
             nn.init.zeros_(w_B.weight)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, sequence, attention_mask) -> Tensor:
 
-        return self.lora_barcode_bert(x).logits.softmax(dim=-1).mean(dim=1)
+
+        return self.lora_barcode_bert(sequence).logits.softmax(dim=-1).mean(dim=1)
 
 
 class Freeze_DNA_Encoder(nn.Module):
