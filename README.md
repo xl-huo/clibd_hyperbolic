@@ -30,6 +30,7 @@ Depending on your GPU version, you may have to modify the torch version and othe
 # Pretrained embeddings and models
 We provide pretrained embeddings and model weights.  We evaluate our models by encoding the image or DNA barcode, and using the taxonomic labels from the closest matching embedding (either using image or DNA barcode).  See [Download dataset](#download-dataset) and [Running Experiments](#running-experiments) for how to get the data, and to train and evaluate the models.
 
+**NOTE**: Currently the checkpoints and config files pointed by these links are expired, we are working to update them as soon as possible. We deeply apologize for any inconvenience this may have caused.
 
 | Training data |  Aligned modalities |  Embeddings |  Model  | Config |
 |---------------|---------------------|-------------|---------|--------|
