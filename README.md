@@ -185,12 +185,12 @@ unzip processed_data.zip
 
 ### Train CLIBD with INSECT dataset
 ```shell
-python scripts/train_cl.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_ssl_on_insect.yaml'
+python scripts/train_cl.py 'model_config=for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl_on_insect.yaml'
 ```
 
 ###  Extract image and DNA features of INSECT dataset.
 ```shell
-python scripts/extract_feature_for_insect_dataset.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_ssl_on_insect.yaml'
+python scripts/extract_feature_for_insect_dataset.py 'model_config=for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl_on_insect.yaml'
 ```
 Then, you may move the extracted features to the BZSL folder or download the pre-extracted feature.
 
