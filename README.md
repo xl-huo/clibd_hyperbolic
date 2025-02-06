@@ -115,16 +115,16 @@ python scripts/train_cl.py 'model_config={config_name}'
 To train the full model (I+D+T) using BIOSCAN-1M:
 ```shell
 # From project folder
-python scripts/train_cl.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_ssl'
+python scripts/train_cl.py 'model_config=for_bioscan_1m/final_experiments/image_dna_text_seed_42.yaml'
 ```
 For multi-GPU training, you may need to specify the transport communication between the GPU using NCCL_P2P_LEVEL:
 ```shell
-NCCL_P2P_LEVEL=NVL python scripts/train_cl.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_ssl'
+NCCL_P2P_LEVEL=NVL python scripts/train_cl.py 'model_config=for_bioscan_1m/final_experiments/image_dna_text_seed_42.yaml'
 ```
 
 For example, using the following command, you can load the pre-trained ViT-B, BarcodeBERT, and BERT-small and fine-tune them through contrastive learning. Note that this training will only update their LoRA layers, not all the parameters.
 ```shell
-python scripts/train_cl.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_5m'
+python scripts/train_cl.py 'model_config=for_bioscan_5m/lora_vit_lora_barcode_bert_lora_bert_5m_no_loading.yaml'
 ```
 
 ## Evaluation
@@ -136,12 +136,12 @@ TODO: specify how to run evaluation for different models, and different query an
 To run evaluation for BIOSCAN-1M:
 ```shell
 # From project folder
-python scripts/inference_and_eval.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_ssl'
+python scripts/inference_and_eval.py 'model_config=for_bioscan_1m/final_experiments/image_dna_text_seed_42.yaml'
 ```
 
 To run evaluation for BIOSCAN-5M:
 ```shell
-python scripts/inference_and_eval.py 'model_config=lora_vit_lora_barcode_bert_lora_bert_5m'
+python scripts/inference_and_eval.py 'model_config=for_bioscan_5m/final_experiments/image_dna_text_seed_42.yaml'
 ```
 
 ## For BZSL experiment with the INSECT dataset.
