@@ -13,6 +13,8 @@ Fine-Grained-ZSL-with-DNA
 representation_visualization*
 logs/retrieval
 
+ckpt
+
 .build/
 .env
 .slurmignore
