@@ -85,6 +85,11 @@ We recommend the use of [weights and biases](https://wandb.ai/site) to track and
 wandb login
 # Paste your wandb's API key
 ```
+Note: To enable wandb, you also need to modify /bioscanclip/config/global_config and set:
+```yaml
+debug_flag: false
+```
+
 
 ## Checkpoints
 
