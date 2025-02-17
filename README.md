@@ -137,8 +137,6 @@ python scripts/train_cl.py 'model_config=for_bioscan_5m/lora_vit_lora_barcode_be
 
 During evaluation, we using the trained encoders to obtain embeddings for input image or DNA, and the find the closest matching image or DNA and use the corresponding taxonomical labels as the predicted labels.  We report both the micro and class averaged accuracy for seen and unseen species. 
 
-TODO: specify how to run evaluation for different models, and different query and key combinations.
-
 To run evaluation for BIOSCAN-1M:
 ```shell
 # From project folder
@@ -151,7 +149,6 @@ python scripts/inference_and_eval.py 'model_config=for_bioscan_5m/final_experime
 ```
 
 ## For BZSL experiment with the INSECT dataset.
-TODO add some acknowledgement about the INSECT dataset. Also, the description of the BZSL experiments should be added.
 
 To download unprocessed INSECT dataset, you can reference [BZSL](https://github.com/sbadirli/Fine-Grained-ZSL-with-DNA): 
 
