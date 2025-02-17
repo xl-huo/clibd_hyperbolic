@@ -157,8 +157,10 @@ mkdir -p data/INSECT
 cd data/INSECT
 # Download the images and metadata here.
 
+
 # Note that we need to get the other three labels because the INSECT dataset only has the species label.
 # For that, please edit get_all_species_taxo_labels_dict_and_save_to_json.py, change Entrez.email = None to your email 
+pip install biopython
 python get_all_species_taxo_labels_dict_and_save_to_json.py
 
 # Then, generate CSV and hdf5 file for the dataset.
