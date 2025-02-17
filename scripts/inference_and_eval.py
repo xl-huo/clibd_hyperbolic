@@ -584,7 +584,7 @@ def main(args: DictConfig) -> None:
         unseen_dict["processed_id_list"] = id_dict["unseen_id_list"]
         keys_dict["processed_id_list"] = id_dict["key_id_list"]
         keys_dict["all_processed_id_list"] = id_dict["key_id_list"] + id_dict["key_id_list"] + id_dict["key_id_list"]
-        print("Done loading embeddings from file.")
+        print(f"Done loading embeddings from ‘{extracted_features_path}’")
 
     else:
         # initialize model
