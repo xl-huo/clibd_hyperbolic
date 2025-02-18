@@ -194,8 +194,22 @@ python scripts/train_cl.py 'model_config=for_bioscan_1m/lora_vit_lora_barcode_be
 ```
 
 ###  Extract image and DNA features of INSECT dataset.
+
+To perform contrastive learning for fine-tuning on the INSECT dataset.
+
 ```shell
-python scripts/extract_feature_for_insect_dataset.py 'model_config=for_bioscan_1m/lora_vit_lora_barcode_bert_lora_bert_ssl_on_insect.yaml'
+python scripts/train_cl.py 'model_config=for_bioscan_1m/fine_tune_on_INSECT_dataset/image_dna_text_seed_42_on_INSECT_dataset.yaml'
+```
+
+To perform supervise fine-tune image encoder with INSECT dataset.
+```shell
+python scripts/BZSL/fine_tune_bioscan_clip_image_on_insect.py 'model_config=for_bioscan_1m/final_experiments/image_dna_text_seed_42.yaml'
+```
+
+For feature extracting
+
+```shell
+python scripts/extract_feature_for_insect_dataset.py 'model_config=for_bioscan_1m/fine_tune_on_INSECT_dataset/image_dna_text_seed_42_on_INSECT_dataset.yaml'
 ```
 Then, you may move the extracted features to the BZSL folder or download the pre-extracted feature.
 
