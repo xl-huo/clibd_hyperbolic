@@ -18,6 +18,8 @@ def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint, k=5):
     vocab_size = len(vocab)
     configuration = BertConfig(vocab_size=vocab_size, output_hidden_states=True)
     bert_model = BertForMaskedLM(configuration)
+    print(f"Loading pre-trained BioScanBERT model from {bioscan_bert_checkpoint}")
+
     load_bert_model(bert_model, bioscan_bert_checkpoint)
     return bert_model.to(device)
 
