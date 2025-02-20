@@ -102,11 +102,11 @@ wget https://aspis.cmpt.sfu.ca/projects/bioscan/clip_project/ckpt/BarcodeBERT/mo
 cd ../../..
 mkdir -p ckpt/bioscan_clip/trained_with_bioscan_1m
 cd ckpt/bioscan_clip/trained_with_bioscan_1m
-wget https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_1m/image_dna_text.pth
+wget https://aspis.cmpt.sfu.ca/projects/bioscan/checkpoint/for_readme/image_dna_text/image_dna_text.pth
 cd ../../..
 mkdir -p ckpt/bioscan_clip/trained_with_bioscan_5m
 cd ckpt/bioscan_clip/trained_with_bioscan_5m
-wget https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt/bioscan_clip/trained_with_bioscan_5m/image_dna_text.pth
+wget https://aspis.cmpt.sfu.ca/projects/bioscan/checkpoint/for_readme/bioscan_5m/image_dna_text/best.pth
 ```
 For downloading all CLIBD pre-trained models: [Link](https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/ckpt.zip)
 
