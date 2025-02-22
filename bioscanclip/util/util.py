@@ -116,6 +116,9 @@ def remove_extra_pre_fix(state_dict):
 
 
 def load_bert_model(bert_model, path_to_ckpt):
+
+    print(f"Loading  model from {path_to_ckpt}")
+
     state_dict = torch.load(path_to_ckpt, map_location=torch.device("cpu"))
     state_dict = remove_extra_pre_fix(state_dict)
     bert_model.load_state_dict(state_dict)

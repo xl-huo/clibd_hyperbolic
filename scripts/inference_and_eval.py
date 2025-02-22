@@ -538,6 +538,7 @@ def main(args: DictConfig) -> None:
         args.model_config.ckpt_path = os.path.join(args.model_config.ckpt_path, "best.pth")
     elif os.path.exists(os.path.join(args.model_config.ckpt_path, "last.pth")):
         args.model_config.ckpt_path = os.path.join(args.model_config.ckpt_path, "last.pth")
+
     folder_for_saving = os.path.join(
         args.project_root_path, "extracted_embedding", args.model_config.dataset, args.model_config.model_output_name
     )
@@ -596,6 +597,9 @@ def main(args: DictConfig) -> None:
             pass
         else:
             checkpoint = torch.load(args.model_config.ckpt_path, map_location="cuda:0")
+            print(f"Loading model from {args.model_config.ckpt_path}")
+            print()
+
             model.load_state_dict(checkpoint)
 
         # Load data
