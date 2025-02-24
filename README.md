@@ -251,3 +251,14 @@ We would like to express our gratitude for the use of the INSECT dataset, which 
 This reseach was supported by the Government of Canada’s New Frontiers in Research Fund (NFRF) [NFRFT-2020-00073], 
 Canada CIFAR AI Chair grants, and the Pioneer Centre for AI (DNRF grant number P1).
 This research was also enabled in part by support provided by the Digital Research Alliance of Canada (alliancecan.ca).
+
+# Update log
+
+- May 2024: Initial release of the codebase. Using LoRA to fine-tune the pretrained encoders.
+- July 2024: Added config file for training with BISOCAN-5M dataset. Added BZSL experiment with the INSECT dataset. Including the forked code from [Fine-Grained-ZSL-with-DNA] as a submodule.
+- August 2024: Supported training with full fine-tuning and added correlated config files.
+- October 2024: Supported training with /without auto mixed precision, fix/trainable temperature. Added embeddings and model checkpoints for BIOSCAN-5M. Update the code for embedding visualization and image retrieval.
+- December 2024: Code refactor.
+- February 2025: Update the expired embedding and pre-trained model links in the README.
+
+
