@@ -21,7 +21,6 @@ conda install pytorch=2.0.1 torchvision=0.15.2 torchtext=0.15.2 pytorch-cuda=11.
 pip install -r requirements.txt
 pip install -e .
 pip install git+https://github.com/Baijiong-Lin/LoRA-Torch
-pip install torchvision=0.15.2 torchtext=0.15.2
 ```
 
 
