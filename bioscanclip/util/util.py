@@ -17,6 +17,8 @@ from omegaconf import DictConfig, OmegaConf
 import h5py
 from PIL import Image
 import io
+from itertools import product
+from torchtext.vocab import vocab as build_vocab_from_dict
 
 LEVELS = ["order", "family", "genus", "species"]
 All_TYPE_OF_FEATURES_OF_QUERY = [
@@ -825,6 +827,14 @@ def remove_module_from_state_dict(state_dict):
 
 
 def load_kmer_tokenizer(args, k=4):
+    base_pairs = "ACGT"
+    # TODO: check if 'tokenize_n_nucleotide' in args.
+    tokenize_n_nucleotide = False
+    special_tokens = ["[MASK]", "[UNK]"] 
+    UNK_TOKEN = "[UNK]"
+    stride = 1
+    max_len = 660
+    
     k_mer = k
     kmers = ["".join(kmer) for kmer in product(base_pairs, repeat=k_mer)]
 

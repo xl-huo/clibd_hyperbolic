@@ -16,7 +16,7 @@ bioscan_data:
   path_to_small_species_list_json: ${bioscan_data.dir}/small_species_list.json
   path_to_id_to_position_mapping: ${bioscan_data.dir}/id_to_position_mapping.json
 bioscan_5m_data:
-  dir: ${data_dir}/BIOSCAN_5M
+  dir: ${data_dir}/BIOSCAN_5M/split_data
   image_dir: ${bioscan_5m_data.dir}/images
   path_to_hdf5_data: ${bioscan_5m_data.dir}/BIOSCAN_5M.hdf5
   path_to_smaller_hdf5_data: ${bioscan_5m_data.dir}/BIOSCAN_5M_with_small_pre_train.hdf5

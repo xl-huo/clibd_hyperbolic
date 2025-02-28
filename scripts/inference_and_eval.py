@@ -596,6 +596,10 @@ def main(args: DictConfig) -> None:
             pass
         else:
             checkpoint = torch.load(args.model_config.ckpt_path, map_location="cuda:0")
+
+            if "logit_scale" not in checkpoint:
+                checkpoint["logit_scale"] = torch.nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
+
             model.load_state_dict(checkpoint)
 
         # Load data

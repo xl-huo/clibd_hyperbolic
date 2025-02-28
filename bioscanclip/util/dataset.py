@@ -124,6 +124,8 @@ class Dataset_for_CL(Dataset):
         self.dna_inout_type = dna_type
         if dna_tokens is not None:
             self.dna_tokens = torch.tensor(dna_tokens)
+        else:
+            self.dna_tokens = None
         self.length = length
         self.return_language = return_language
         self.for_training = for_training
@@ -256,6 +258,7 @@ class Dataset_for_CL(Dataset):
                 dna_sequences = self.hdf5_split_group["barcode"][idx].decode("utf-8")
                 processed_barcode, att_mask = self.tokenizer(dna_sequences, offset=0)
                 curr_dna_input = [processed_barcode, att_mask]
+                import pdb; pdb.set_trace()
         else:
             curr_dna_input = self.hdf5_split_group["dna_features"][idx].astype(np.float32)
 
