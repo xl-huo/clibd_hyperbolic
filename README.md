@@ -71,6 +71,8 @@ wget https://aspis.cmpt.sfu.ca/projects/bioscan/BIOSCAN_CLIP_for_downloading/BIO
 ```
 For more information about the hdf5 files, please check [DATA.md](DATA.md).
 
+You can also download the processed data by checking our [huggimgface repo](https://huggingface.co/datasets/bioscan-ml/bioscan-clibd)
+
 ### Download data for generating hdf5 files
 
 You can check [BIOSCAN-1M](https://github.com/zahrag/BIOSCAN-1M) and [BIOSCAN-5M](https://github.com/zahrag/BIOSCAN-5M) to download tsv files. But they are actually not necessary.
