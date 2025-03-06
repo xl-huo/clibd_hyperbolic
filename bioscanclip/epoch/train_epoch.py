@@ -45,11 +45,6 @@ def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimize
         dna_input_batch = torch.stack(tokenized_dna_sequences).squeeze(1).to(device)
         attention_masks = torch.stack(attention_masks).squeeze(1).to(device)
 
-        # print(type(dna_input_batch))
-        # print(dna_input_batch.size())
-        # print(type(attention_masks))
-        # print(attention_masks.size())
-
         if enable_autocast:
             with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
                 image_output, dna_output, language_output, logit_scale, logit_bias = model(image_input_batch,

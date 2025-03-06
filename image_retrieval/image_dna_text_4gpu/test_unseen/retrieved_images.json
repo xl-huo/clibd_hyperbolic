@@ -1,0 +1,562 @@
+[
+    {
+        "query": {
+            "file_name": "BIOUG66755-B06.jpg",
+            "taxonomy": {
+                "order": "Coleoptera",
+                "family": "Latridiidae",
+                "genus": "Cortinicara",
+                "species": "Cortinicara gibbosa"
+            }
+        },
+        "results": [
+            {
+                "query_type": "encoded_dna_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG66760-G09.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG66005-F07.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG66771-E08.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_image_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG66760-G02.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG66755-H11.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG66755-H06.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG66771-E08.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    },
+                    {
+                        "file_name": "5246495.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG66755-G03.jpg",
+                        "taxonomy": {
+                            "order": "Coleoptera",
+                            "family": "Latridiidae",
+                            "genus": "Cortinicara",
+                            "species": "Cortinicara gibbosa"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "query": {
+            "file_name": "BIOUG70212-H01.jpg",
+            "taxonomy": {
+                "order": "Orthoptera",
+                "family": "Acrididae",
+                "genus": "Aiolopus",
+                "species": "Aiolopus thalassinus"
+            }
+        },
+        "results": [
+            {
+                "query_type": "encoded_dna_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG66312-A04.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Acrididae",
+                            "genus": "Aiolopus",
+                            "species": "Aiolopus thalassinus"
+                        }
+                    },
+                    {
+                        "file_name": "3852265.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Acrididae",
+                            "genus": "Aiolopus",
+                            "species": "Aiolopus thalassinus"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG74569-A08.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Tettigoniidae",
+                            "genus": "Conocephalus",
+                            "species": "Conocephalus fasciatus"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_image_feature",
+                "predictions": [
+                    {
+                        "file_name": "3852265.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Acrididae",
+                            "genus": "Aiolopus",
+                            "species": "Aiolopus thalassinus"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG66312-A04.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Acrididae",
+                            "genus": "Aiolopus",
+                            "species": "Aiolopus thalassinus"
+                        }
+                    },
+                    {
+                        "file_name": "4285248.jpg",
+                        "taxonomy": {
+                            "order": "Plecoptera",
+                            "family": "Nemouridae",
+                            "genus": "Nemurella",
+                            "species": "Nemurella pictetii"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG74569-A08.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Tettigoniidae",
+                            "genus": "Conocephalus",
+                            "species": "Conocephalus fasciatus"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG74569-A06.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Tettigoniidae",
+                            "genus": "Conocephalus",
+                            "species": "Conocephalus fasciatus"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG74568-H04.jpg",
+                        "taxonomy": {
+                            "order": "Orthoptera",
+                            "family": "Tettigoniidae",
+                            "genus": "Conocephalus",
+                            "species": "Conocephalus fasciatus"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "query": {
+            "file_name": "BIOUG68205-B02.jpg",
+            "taxonomy": {
+                "order": "Blattodea",
+                "family": "Termitidae",
+                "genus": "Nasutitermes",
+                "species": "Nasutitermes guayanae"
+            }
+        },
+        "results": [
+            {
+                "query_type": "encoded_dna_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG68205-C06.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Termitidae",
+                            "genus": "Nasutitermes",
+                            "species": "Nasutitermes guayanae"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG79861-B06.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Termitidae",
+                            "genus": "Nasutitermes",
+                            "species": "Nasutitermes bivalens"
+                        }
+                    },
+                    {
+                        "file_name": "4583672.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Kalotermitidae",
+                            "genus": "Glyptotermes",
+                            "species": "Glyptotermes barbouri"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_image_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG68205-C06.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Termitidae",
+                            "genus": "Nasutitermes",
+                            "species": "Nasutitermes guayanae"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG70016-D11.jpg",
+                        "taxonomy": {
+                            "order": "Hemiptera",
+                            "family": "Fulgoridae",
+                            "genus": "Copidocephala",
+                            "species": "Copidocephala viridiguttata"
+                        }
+                    },
+                    {
+                        "file_name": "4995219.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Kalotermitidae",
+                            "genus": "Glyptotermes",
+                            "species": "Glyptotermes barbouri"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG79861-B06.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Termitidae",
+                            "genus": "Nasutitermes",
+                            "species": "Nasutitermes bivalens"
+                        }
+                    },
+                    {
+                        "file_name": "4352513.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Kalotermitidae",
+                            "genus": "Glyptotermes",
+                            "species": "Glyptotermes barbouri"
+                        }
+                    },
+                    {
+                        "file_name": "4983131.jpg",
+                        "taxonomy": {
+                            "order": "Blattodea",
+                            "family": "Kalotermitidae",
+                            "genus": "Glyptotermes",
+                            "species": "Glyptotermes barbouri"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "query": {
+            "file_name": "BIOUG73685-B06.jpg",
+            "taxonomy": {
+                "order": "Lepidoptera",
+                "family": "Pyralidae",
+                "genus": "chryBioLep01",
+                "species": "chryBioLep01 BioLep1705"
+            }
+        },
+        "results": [
+            {
+                "query_type": "encoded_dna_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG73744-F11.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Pyralidae",
+                            "genus": "chryBioLep01",
+                            "species": "chryBioLep01 BioLep1705"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG73744-F05.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Pyralidae",
+                            "genus": "chryBioLep01",
+                            "species": "chryBioLep01 BioLep1705"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG72674-B09.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Pyralidae",
+                            "genus": "chryBioLep01",
+                            "species": "chryBioLep01 BioLep1705"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_image_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG70142-C01.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Depressariidae",
+                            "genus": "elachJanzen01",
+                            "species": "elachJanzen01 Janzen750"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG68950-C04.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Depressariidae",
+                            "genus": "Stenoma",
+                            "species": "Stenoma Janzen4068"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG68323-D07.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Depressariidae",
+                            "genus": "elachBioLep01",
+                            "species": "elachBioLep01 BioLep689"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG68922-C11.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Depressariidae",
+                            "genus": "elachMalaise7530",
+                            "species": "elachMalaise7530 Malaise7530"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG80817-C11.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Depressariidae",
+                            "genus": "elachMalaise7530",
+                            "species": "elachMalaise7530 Malaise7530"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG76589-E06.jpg",
+                        "taxonomy": {
+                            "order": "Lepidoptera",
+                            "family": "Depressariidae",
+                            "genus": "elachMalaise7530",
+                            "species": "elachMalaise7530 Malaise7530"
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "query": {
+            "file_name": "5541219.jpg",
+            "taxonomy": {
+                "order": "Diptera",
+                "family": "Sciaridae",
+                "genus": "Bradysia",
+                "species": "Bradysia inusitata"
+            }
+        },
+        "results": [
+            {
+                "query_type": "encoded_dna_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG70675-D08.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia inusitata"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG71281-D06.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia inusitata"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG71612-F05.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia inusitata"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_image_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG70681-D10.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia inusitata"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG71615-C01.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia inusitata"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG70681-C05.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia inusitata"
+                        }
+                    }
+                ]
+            },
+            {
+                "query_type": "encoded_image_feature",
+                "key_type": "encoded_dna_feature",
+                "predictions": [
+                    {
+                        "file_name": "BIOUG73236-B02.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia praecox"
+                        }
+                    },
+                    {
+                        "file_name": "BIOUG73225-A01.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia praecox"
+                        }
+                    },
+                    {
+                        "file_name": "4784587.jpg",
+                        "taxonomy": {
+                            "order": "Diptera",
+                            "family": "Sciaridae",
+                            "genus": "Bradysia",
+                            "species": "Bradysia praecox"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+]
