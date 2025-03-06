@@ -17,6 +17,8 @@ from omegaconf import DictConfig, OmegaConf
 import h5py
 from PIL import Image
 import io
+from huggingface_hub import hf_hub_download
+
 
 LEVELS = ["order", "family", "genus", "species"]
 All_TYPE_OF_FEATURES_OF_QUERY = [
@@ -116,7 +118,10 @@ def remove_extra_pre_fix(state_dict):
 
 
 def load_bert_model(bert_model, path_to_ckpt):
-    state_dict = torch.load(path_to_ckpt, map_location=torch.device("cpu"))
+    repo_id = "bioscan-ml/bioscan-clibd"
+    file_name = "ckpt/BarcodeBERT/5_mer/model_41.pth"
+    model_path = hf_hub_download(repo_id=repo_id, filename=file_name)
+    state_dict = torch.load(model_path, map_location=torch.device("cpu"))
     state_dict = remove_extra_pre_fix(state_dict)
     bert_model.load_state_dict(state_dict)
 
