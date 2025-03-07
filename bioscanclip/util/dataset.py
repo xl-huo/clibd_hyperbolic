@@ -201,12 +201,20 @@ class Dataset_for_CL(Dataset):
                         ]
                     )
                 else:
-                    self.transform = transforms.Compose(
-                        [
-                            transforms.ToTensor(),
-                            transforms.Resize(size=256, antialias=True),
-                            transforms.CenterCrop(224),
-                        ]
+                    if hasattr(args.model_config, "transform_with_resize") and args.model_config.transform_with_resize:
+                        self.transform = transforms.Compose(
+                            [
+                                transforms.ToTensor(),
+                                transforms.Resize(size=224, antialias=True),
+                            ]
+                        )
+                    else:
+                        self.transform = transforms.Compose(
+                            [
+                                transforms.ToTensor(),
+                                transforms.Resize(size=256, antialias=True),
+                                transforms.CenterCrop(224),
+                            ]
                     )
         elif self.image_input_type == "feature":
             self.transform = None
