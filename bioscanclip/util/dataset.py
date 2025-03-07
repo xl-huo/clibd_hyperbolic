@@ -205,7 +205,7 @@ class Dataset_for_CL(Dataset):
                         self.transform = transforms.Compose(
                             [
                                 transforms.ToTensor(),
-                                transforms.Resize(size=224, antialias=True),
+                                transforms.Resize(size=(224, 224), antialias=True),
                             ]
                         )
                     else:
