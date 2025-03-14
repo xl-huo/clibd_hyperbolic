@@ -49,8 +49,7 @@ def get_feature_and_label(dataloader, model, device, for_open_clip=False, multi_
     encoded_dna_feature_list = []
     encoded_text_feature_list = []
     label_list = []
-    file_name_list = []
-
+    file_name_list =[]
     pbar = tqdm(enumerate(dataloader), total=len(dataloader))
     model.eval()
 
