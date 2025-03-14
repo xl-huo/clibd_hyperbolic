@@ -24,7 +24,24 @@ def load_pre_trained_bioscan_bert(bioscan_bert_checkpoint):
     if "bert.embeddings.position_ids" in model_ckpt:
         model_ckpt.pop("bert.embeddings.position_ids")
 
-    model.load_state_dict(model_ckpt)
+    for key in ["classifier.weight", "classifier.bias"]:
+        if key in model_ckpt:
+            print(f"Removing unexpected key: {key}")
+            model_ckpt.pop(key)
+
+    missing_keys = [
+        "cls.predictions.bias",
+        "cls.predictions.transform.dense.weight",
+        "cls.predictions.transform.dense.bias",
+        "cls.predictions.transform.LayerNorm.weight",
+        "cls.predictions.transform.LayerNorm.bias",
+        "cls.predictions.decoder.weight",
+        "cls.predictions.decoder.bias",
+    ]
+    for key in missing_keys:
+        if key not in model_ckpt:
+            print(f"Warning: {key} not found in checkpoint, reinitializing.")
+    model.load_state_dict(model_ckpt, strict=False)
     return model
 
 

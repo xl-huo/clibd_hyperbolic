@@ -1,5 +1,5 @@
-batch_size: 500
-epochs: 1
+batch_size: 300
+epochs: 15
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-5M
 using_train_seen_for_pre_train: true
@@ -16,11 +16,12 @@ language:
   pre_train_model: prajjwal1/bert-small
 
 model_output_name: image_dna_text_4gpu
-evaluation_period: 1
+evaluation_period: 5
 
 barcodeBERT_ckpt_path: ${project_root_path}/ckpt/BarcodeBERT/trained_with_5m/BIOSCAN-5M-BEST_k4_6_6_w1_m0_r0.pt
 
 ckpt_path: ${project_root_path}/ckpt/bioscan_clip/new_5M_training/trained_with_5M_image_dna_text/best.pth
+
 output_dim: 768
 port: 29531
 
