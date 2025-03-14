@@ -18,6 +18,8 @@ from transformers import AutoTokenizer
 from bioscanclip.model.language_encoder import load_pre_trained_bert
 import open_clip
 
+from bioscanclip.util.util import TensorResizeLongEdge
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -205,7 +207,8 @@ class Dataset_for_CL(Dataset):
                         self.transform = transforms.Compose(
                             [
                                 transforms.ToTensor(),
-                                transforms.Resize(size=(224, 224), antialias=True),
+                                TensorResizeLongEdge(224),
+
                             ]
                         )
                     else:
