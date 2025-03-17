@@ -18,7 +18,7 @@ def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimize
 
     model.train()
     stop_flag = False
-    for step, batch in pbar[:5000]:
+    for step, batch in pbar:
         processid_batch, image_input_batch, dna_input_batch, input_ids, token_type_ids, attention_mask, label_for_train_batch = batch
         if for_open_clip:
             language_input = input_ids
