@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+from bioscanclip.util import lorentz as L
+
 try:
     import torch.distributed.nn
     from torch import distributed as dist
@@ -199,3 +201,123 @@ class ClipLoss(nn.Module):
 
         total_loss = sum(loss_list) * 1.0 / len(loss_list)
         return {"contrastive_loss": total_loss} if output_dict else total_loss
+
+
+class ClipLoss_hyperbolic(nn.Module):
+
+    def __init__(
+            self,
+            local_loss=False,
+            gather_with_grad=False,
+            cache_labels=False,
+            rank=0,
+            world_size=1,
+            use_horovod=False,
+            criterion=nn.CrossEntropyLoss(),
+            bind_to=None,
+            no_image_text_loss=False,
+            entail_weight=0.2,
+    ):
+        super().__init__()
+        self.local_loss = local_loss
+        self.gather_with_grad = gather_with_grad
+        self.rank = rank
+        self.world_size = world_size
+        self.use_horovod = use_horovod
+        self.criterion = criterion
+
+        # cache state
+        self.prev_num_logits = 0
+        self.labels = {}
+        self.bind_to = bind_to
+        self.no_image_text_loss = no_image_text_loss
+
+        self.entail_weight = entail_weight
+
+    def forward(self, image_features, dna_features, text_features, labels, logit_scale, curv):
+        device = image_features.device
+
+        all_labels = torch.cat(torch.distributed.nn.all_gather(labels), dim=0)
+        all_labels = construct_label_metrix(all_labels).to(device)
+        if self.world_size > 1:
+            if image_features is not None:
+                all_image_features = gather_features(
+                    image_features,
+                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+            if dna_features is not None:
+                all_dna_features = gather_features(
+                    dna_features,
+                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+            if text_features is not None:
+                all_text_features = gather_features(
+                    text_features,
+                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+        else:
+            all_image_features = image_features.clone() if image_features is not None else None
+            all_dna_features = dna_features.clone() if dna_features is not None else None
+            all_text_features = text_features.clone() if text_features is not None else None
+                    
+        input_features = [image_features, dna_features, text_features]
+        input_features = [item for item in input_features if item is not None]
+        feature_list = [all_image_features, all_dna_features, all_text_features]
+        feature_list = [item for item in feature_list if item is not None]
+
+        if len(feature_list) < 2:
+            raise ValueError("Too less element for calculating the contrastive loss.")
+
+        contrastive_loss_list = []
+        entailment_loss_list = []
+        bind_to_idx = None
+        if self.bind_to is not None:
+            if self.bind_to == "image":
+                bind_to_idx = 0
+            elif self.bind_to == "dna":
+                bind_to_idx = 1
+            elif self.bind_to == "text":
+                bind_to_idx = 2
+
+
+        for idx_a, (feature_a, input_feature_a) in enumerate(zip(feature_list, input_features)):
+            for idx_b, (feature_b, input_feature_b) in enumerate(zip(feature_list, input_features)):
+                if bind_to_idx is not None:
+                    if idx_a != bind_to_idx and idx_b != bind_to_idx:
+                        continue
+                if idx_a == idx_b:
+                    continue
+
+                if self.no_image_text_loss and (idx_a == 0 or idx_b == 0) and (idx_a == 2 or idx_b == 2):
+                    continue
+                # feature_a = F.normalize(feature_a, p=2, dim=1)
+                # feature_b = F.normalize(feature_b, p=2, dim=1)
+
+                # sim_a_b = logit_scale * feature_a @ feature_b.T
+                # sim_b_a = logit_scale * feature_b @ feature_a.T
+                sim_a_b = -L.pairwise_inner(input_feature_a, feature_b, curv)
+                sim_b_a = -L.pairwise_inner(input_feature_b, feature_a, curv)
+
+                loss_a_b = self.criterion(logit_scale * sim_a_b, all_labels)
+                loss_b_a = self.criterion(logit_scale * sim_b_a, all_labels)
+                contrastive_loss_list.append(loss_a_b)
+                contrastive_loss_list.append(loss_b_a)
+
+                # TODO: make more robust
+                # Hyperbolic entailment loss: text should entail matching image.
+                if idx_a == 1 and idx_b == 0:
+                    _angle = L.oxy_angle(input_feature_a, input_feature_b, curv)
+                    _aperture = L.half_aperture(input_feature_a, curv, eps=1e-6)
+                    entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
+                    entailment_loss_list.append(entailment_loss)
+                elif idx_a == 0 and idx_b == 1:
+                    _angle = L.oxy_angle(input_feature_b, input_feature_a, curv)
+                    _aperture = L.half_aperture(input_feature_b, curv, eps=1e-6)
+                    entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
+                    entailment_loss_list.append(entailment_loss)
+
+        contrastive_total_loss = sum(contrastive_loss_list) * 1.0 / len(contrastive_loss_list)
+        entailment_total_loss = sum(entailment_loss_list) * 1.0 / len(entailment_loss_list)
+
+        total_loss = contrastive_total_loss
+        if self.entail_weight > 0:
+            total_loss += self.entail_weight * entailment_total_loss
+
+        return {"loss": total_loss, "contrastive_loss": contrastive_total_loss, "entailment_loss": entailment_total_loss}

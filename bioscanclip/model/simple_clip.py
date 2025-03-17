@@ -1,3 +1,4 @@
+import math
 import torch.nn.functional as F
 import timm
 import torch.nn as nn
@@ -11,6 +12,7 @@ from typing import Optional
 import torch
 import open_clip
 from bioscanclip.util.util import remove_module_from_state_dict
+from bioscanclip.util import lorentz as L
 
 
 class SimpleCLIP(nn.Module):
@@ -54,6 +56,82 @@ class SimpleCLIP(nn.Module):
             if self.language_encoder is not None:
                 language_output = F.normalize(self.language_encoder(language_input), p=2, dim=-1)
         return image_output, dna_output, language_output, self.logit_scale.exp(), self.logit_bias
+
+
+class SimpleCLIP_hyperbolic(SimpleCLIP):
+    def __init__(self, image_encoder, dna_encoder, language_encoder, open_clip_model=None, init_logit_scale: float = np.log(1 / 0.07),
+                 init_logit_bias: Optional[float] = None, for_bio_clip=False, 
+                 embed_dim: int = 768, curv_init: float = 1.0, learn_curv: bool = True):
+        super().__init__(image_encoder, dna_encoder, language_encoder, open_clip_model, init_logit_scale, init_logit_bias, for_bio_clip)
+
+        # Initialize curvature parameter. Hyperboloid curvature will be `-curv`.
+        self.curv = nn.Parameter(
+            torch.tensor(curv_init).log(), requires_grad=learn_curv
+        )
+        # When learning the curvature parameter, restrict it in this interval to
+        # prevent training instability.
+        self._curv_minmax = {
+            "max": math.log(curv_init * 10),
+            "min": math.log(curv_init / 10),
+        }
+
+        # Learnable scalars to ensure that image/text features have an expected
+        # unit norm before exponential map (at initialization).
+        self.visual_alpha = nn.Parameter(torch.tensor(embed_dim**-0.5).log())
+        self.textual_alpha = nn.Parameter(torch.tensor(embed_dim**-0.5).log())
+        self.dna_alpha = nn.Parameter(torch.tensor(embed_dim**-0.5).log())
+
+    @property
+    def device(self) -> torch.device:
+        return self.logit_scale.device
+
+    def forward(self, image_input, dna_input, language_input):
+
+        self.curv.data = torch.clamp(self.curv.data, **self._curv_minmax)
+        _curv = self.curv.exp()
+
+        # Clamp scaling factors such that they do not up-scale the feature norms.
+        # Once `exp(scale) = 1`, they can simply be removed during inference.
+        self.visual_alpha.data = torch.clamp(self.visual_alpha.data, max=0.0)
+        self.textual_alpha.data = torch.clamp(self.textual_alpha.data, max=0.0)
+
+        image_output = None
+        dna_output = None
+        language_output = None
+
+        if self.dna_encoder is not None:
+            dna_features = self.dna_encoder(dna_input) * self.dna_alpha.exp()
+            # These features are space components of embeddings in the tangent
+            # space of the Hyperboloid origin (which is Euclidean). Apply projection.
+            with torch.autocast(self.device.type, dtype=torch.float32):
+                dna_output = L.exp_map0(dna_features, curv=self.curv.exp())
+
+        if self.open_clip_model is not None:
+            if image_input is not None:
+                image_features = self.open_clip_model.encode_image(image_input) * self.visual_alpha.exp()
+                with torch.autocast(self.device.type, dtype=torch.float32):
+                    image_output = L.exp_map0(image_features, curv=self.curv.exp())
+            if language_input is not None:
+                language_input = self.tokenizer_for_open_clip(language_input, context_length=77)
+                language_input = language_input.to(image_input.device)
+                text_features = self.open_clip_model.encode_text(language_input) * self.textual_alpha.exp()
+                with torch.autocast(self.device.type, dtype=torch.float32):
+                    language_output = L.exp_map0(text_features, curv=self.curv.exp())
+        else:
+            if self.image_encoder is not None:
+                image_features = self.image_encoder(image_input) * self.visual_alpha.exp()
+                with torch.autocast(self.device.type, dtype=torch.float32):
+                    image_output = L.exp_map0(image_features, curv=self.curv.exp())
+            if self.language_encoder is not None:
+                language_features = self.language_encoder(language_input) * self.textual_alpha.exp()
+                with torch.autocast(self.device.type, dtype=torch.float32):
+                    language_output = L.exp_map0(language_features, curv=self.curv.exp())
+
+        # Clamp temperature such that logits are not scaled more than 100x.
+        # ln(100) = ~4.6052
+        self.logit_scale.data = torch.clamp(self.logit_scale.data, max=4.6052)
+
+        return image_output, dna_output, language_output, self.logit_scale.exp(), _curv
 
 
 def load_vit_for_simclr_training(args, device=None):
@@ -202,9 +280,30 @@ def load_clip_model(args, device=None):
                                      hidden_dim=args.model_config.dna.hidden_dim,
                                      output_dim=args.model_config.output_dim)
 
+    # load hyperbolic hyperparameters
+    train_hyperbolic = False
+    if hasattr(args.model_config, 'hyperbolic_space'):
+        curv_init = 1.0
+        if hasattr(args.model_config.hyperbolic_space, 'curv_init'):
+            curv_init = args.model_config.hyperbolic_space.curv_init
 
-    model = SimpleCLIP(image_encoder=image_encoder, dna_encoder=dna_encoder,
-                       language_encoder=language_encoder, open_clip_model=open_clip_model, for_bio_clip=for_bio_clip)
+        learn_curv = True
+        if hasattr(args.model_config.hyperbolic_space, 'learn_curv'):
+            learn_curv = args.model_config.hyperbolic_space.learn_curv
+        
+        train_hyperbolic = True
+        if hasattr(args.model_config.hyperbolic_space, 'train_hyperbolic'):
+            train_hyperbolic = args.model_config.hyperbolic_space.train_hyperbolic
+
+    if train_hyperbolic:
+        model = SimpleCLIP_hyperbolic(image_encoder=image_encoder, dna_encoder=dna_encoder,
+                                      language_encoder=language_encoder, open_clip_model=open_clip_model,
+                                      for_bio_clip=for_bio_clip, embed_dim=args.model_config.output_dim, 
+                                      curv_init=curv_init, learn_curv=learn_curv)
+    else:
+        model = SimpleCLIP(image_encoder=image_encoder, dna_encoder=dna_encoder,
+                           language_encoder=language_encoder, open_clip_model=open_clip_model, 
+                           for_bio_clip=for_bio_clip)
 
     if device is not None:
         model.to(device)

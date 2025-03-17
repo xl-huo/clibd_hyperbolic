@@ -18,7 +18,7 @@ from omegaconf import DictConfig, OmegaConf, open_dict
 
 from bioscanclip.epoch.train_epoch import train_epoch
 from inference_and_eval import get_features_and_label, inference_and_print_result
-from bioscanclip.model.loss_func import ContrastiveLoss, ClipLoss
+from bioscanclip.model.loss_func import ContrastiveLoss, ClipLoss, ClipLoss_hyperbolic
 from bioscanclip.model.simple_clip import load_clip_model
 from bioscanclip.util.util import set_seed
 from bioscanclip.util.dataset import load_dataloader, load_insect_dataloader
@@ -190,6 +190,17 @@ def main_process(rank: int, world_size: int, args):
     if hasattr(args.model_config, 'eval_skip_epoch') and args.model_config.eval_skip_epoch:
         eval_skip_epoch = args.model_config.eval_skip_epoch
 
+    # hyperbolic
+    train_hyperbolic = False
+    if hasattr(args.model_config, 'hyperbolic_space'):
+        train_hyperbolic = True
+        if hasattr(args.model_config.hyperbolic_space, 'train_hyperbolic'):
+            train_hyperbolic = args.model_config.hyperbolic_space.train_hyperbolic
+
+        entail_weight = 0.2
+        if hasattr(args.model_config.hyperbolic_space, 'entail_weight'):
+            entail_weight = args.model_config.hyperbolic_space.entail_weight
+
     scaler = GradScaler(enabled=enable_amp)
 
     # Load MODEL
@@ -252,10 +263,17 @@ def main_process(rank: int, world_size: int, args):
         no_image_text_loss = args.model_config.no_image_text_loss
 
     if all_gather:
-        criterion = ClipLoss(local_loss=args.model_config.loss_setup.local_loss,
-                             gather_with_grad=args.model_config.loss_setup.gather_with_grad, rank=rank,
-                             world_size=world_size, use_horovod=args.model_config.loss_setup.use_horovod,
-                             criterion=nn.CrossEntropyLoss(), bind_to=bind_to, no_image_text_loss=no_image_text_loss)
+        if train_hyperbolic:
+            criterion = ClipLoss_hyperbolic(local_loss=args.model_config.loss_setup.local_loss,
+                                gather_with_grad=args.model_config.loss_setup.gather_with_grad, rank=rank,
+                                world_size=world_size, use_horovod=args.model_config.loss_setup.use_horovod,
+                                criterion=nn.CrossEntropyLoss(), bind_to=bind_to, 
+                                no_image_text_loss=no_image_text_loss, entail_weight=entail_weight)
+        else:
+            criterion = ClipLoss(local_loss=args.model_config.loss_setup.local_loss,
+                                gather_with_grad=args.model_config.loss_setup.gather_with_grad, rank=rank,
+                                world_size=world_size, use_horovod=args.model_config.loss_setup.use_horovod,
+                                criterion=nn.CrossEntropyLoss(), bind_to=bind_to, no_image_text_loss=no_image_text_loss)
     else:
         criterion = ContrastiveLoss(criterion=nn.CrossEntropyLoss(), logit_scale=1 / 0.07)
 
@@ -280,10 +298,11 @@ def main_process(rank: int, world_size: int, args):
             print(f"Process {rank} stopping at epoch {epoch} due to early stopping")
             break
         train_epoch(args.activate_wandb, args.model_config.epochs, epoch,
-                                                                 pre_train_dataloader, model, optimizer,
-                                                                 criterion, rank, rank=rank, scheduler=scheduler,
-                                                                 for_open_clip=for_open_clip,
-                                                                 fix_temperature=fix_temperature, scaler=scaler, enable_autocast=enable_amp)
+                    pre_train_dataloader, model, optimizer,
+                    criterion, rank, rank=rank, scheduler=scheduler,
+                    for_open_clip=for_open_clip,
+                    fix_temperature=fix_temperature, scaler=scaler, 
+                    enable_autocast=enable_amp, train_hyperbolic=train_hyperbolic)
 
         if (epoch % args.model_config.evaluation_period == 0 or epoch == args.model_config.epochs - 1) and rank == 0 and epoch > eval_skip_epoch:
             original_model = model.module if hasattr(model, 'module') else model
