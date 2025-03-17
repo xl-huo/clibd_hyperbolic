@@ -22,7 +22,7 @@ model_output_name: image_text_hyperbolic_2gpu
 evaluation_period: 1
 ckpt_path: ${project_root_path}/ckpt/bioscan_clip/final_experiments/image_text_2gpu_50epoch/best.pth
 output_dim: 768
-port: 29533
+port: 29534
 
 disable_lora: true
 lr_scheduler: one_cycle
