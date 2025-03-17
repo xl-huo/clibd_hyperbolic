@@ -244,14 +244,22 @@ class ClipLoss_hyperbolic(nn.Module):
                 all_image_features = gather_features(
                     image_features,
                     self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+            else:
+                all_image_features = None
+
             if dna_features is not None:
                 all_dna_features = gather_features(
                     dna_features,
                     self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+            else:
+                all_dna_features = None
+
             if text_features is not None:
                 all_text_features = gather_features(
                     text_features,
                     self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+            else:
+                all_text_features = None
         else:
             all_image_features = image_features.clone() if image_features is not None else None
             all_dna_features = dna_features.clone() if dna_features is not None else None
