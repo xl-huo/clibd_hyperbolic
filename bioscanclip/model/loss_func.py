@@ -314,12 +314,12 @@ class ClipLoss_hyperbolic(nn.Module):
                     # Hyperbolic entailment loss: text should entail matching image.
                     if idx_a == 1 and idx_b == 0:
                         _angle = L.oxy_angle(input_feature_a, input_feature_b, curv)
-                        _aperture = L.half_aperture(input_feature_a, curv)
+                        _aperture = L.half_aperture(input_feature_a, curv, eps=1e-6)
                         entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
                         entailment_loss_list.append(entailment_loss)
                     elif idx_a == 0 and idx_b == 1:
                         _angle = L.oxy_angle(input_feature_b, input_feature_a, curv)
-                        _aperture = L.half_aperture(input_feature_b, curv)
+                        _aperture = L.half_aperture(input_feature_b, curv, eps=1e-6)
                         entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
                         entailment_loss_list.append(entailment_loss)
 
