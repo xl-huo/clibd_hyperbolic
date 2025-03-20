@@ -129,9 +129,11 @@ class SimpleCLIP_hyperbolic(SimpleCLIP):
 
         # Clamp temperature such that logits are not scaled more than 100x.
         # ln(100) = ~4.6052
-        self.logit_scale.data = torch.clamp(self.logit_scale.data, max=4.6052)
+        with torch.autocast(self.device.type, dtype=torch.float32):
+            self.logit_scale.data = torch.clamp(self.logit_scale.data, max=4.6052)
+            _scale = self.logit_scale.exp()
 
-        return image_output, dna_output, language_output, self.logit_scale.exp(), _curv
+        return image_output, dna_output, language_output, _scale, _curv
 
 
 def load_vit_for_simclr_training(args, device=None):
