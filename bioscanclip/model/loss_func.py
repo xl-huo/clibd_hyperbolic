@@ -285,7 +285,7 @@ class ClipLoss_hyperbolic(nn.Module):
                 bind_to_idx = 2
 
         # autocast to force a higher floating point precision.
-        with torch.autocast(self.device.type, dtype=torch.float32):
+        with torch.autocast(device.type, dtype=torch.float32):
             for idx_a, (feature_a, input_feature_a) in enumerate(zip(feature_list, input_features)):
                 for idx_b, (feature_b, input_feature_b) in enumerate(zip(feature_list, input_features)):
                     if bind_to_idx is not None:
