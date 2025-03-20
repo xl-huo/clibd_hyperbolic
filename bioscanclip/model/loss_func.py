@@ -237,55 +237,56 @@ class ClipLoss_hyperbolic(nn.Module):
     def forward(self, image_features, dna_features, text_features, labels, logit_scale, curv):
         device = image_features.device
 
-        all_labels = torch.cat(torch.distributed.nn.all_gather(labels), dim=0)
-        all_labels = construct_label_metrix(all_labels).to(device)
-        if self.world_size > 1:
-            if image_features is not None:
-                all_image_features = gather_features(
-                    image_features,
-                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
-            else:
-                all_image_features = None
-
-            if dna_features is not None:
-                all_dna_features = gather_features(
-                    dna_features,
-                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
-            else:
-                all_dna_features = None
-
-            if text_features is not None:
-                all_text_features = gather_features(
-                    text_features,
-                    self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
-            else:
-                all_text_features = None
-        else:
-            all_image_features = image_features.clone() if image_features is not None else None
-            all_dna_features = dna_features.clone() if dna_features is not None else None
-            all_text_features = text_features.clone() if text_features is not None else None
-                    
-        input_features = [image_features, dna_features, text_features]
-        input_features = [item for item in input_features if item is not None]
-        feature_list = [all_image_features, all_dna_features, all_text_features]
-        feature_list = [item for item in feature_list if item is not None]
-
-        if len(feature_list) < 2:
-            raise ValueError("Too less element for calculating the contrastive loss.")
-
-        contrastive_loss_list = []
-        entailment_loss_list = []
-        bind_to_idx = None
-        if self.bind_to is not None:
-            if self.bind_to == "image":
-                bind_to_idx = 0
-            elif self.bind_to == "dna":
-                bind_to_idx = 1
-            elif self.bind_to == "text":
-                bind_to_idx = 2
-
         # autocast to force a higher floating point precision.
         with torch.autocast(device.type, dtype=torch.float32):
+
+            all_labels = torch.cat(torch.distributed.nn.all_gather(labels), dim=0)
+            all_labels = construct_label_metrix(all_labels).to(device)
+            if self.world_size > 1:
+                if image_features is not None:
+                    all_image_features = gather_features(
+                        image_features,
+                        self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+                else:
+                    all_image_features = None
+
+                if dna_features is not None:
+                    all_dna_features = gather_features(
+                        dna_features,
+                        self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+                else:
+                    all_dna_features = None
+
+                if text_features is not None:
+                    all_text_features = gather_features(
+                        text_features,
+                        self.local_loss, self.gather_with_grad, self.rank, self.world_size, self.use_horovod)
+                else:
+                    all_text_features = None
+            else:
+                all_image_features = image_features.clone() if image_features is not None else None
+                all_dna_features = dna_features.clone() if dna_features is not None else None
+                all_text_features = text_features.clone() if text_features is not None else None
+                        
+            input_features = [image_features, dna_features, text_features]
+            input_features = [item for item in input_features if item is not None]
+            feature_list = [all_image_features, all_dna_features, all_text_features]
+            feature_list = [item for item in feature_list if item is not None]
+
+            if len(feature_list) < 2:
+                raise ValueError("Too less element for calculating the contrastive loss.")
+
+            contrastive_loss_list = []
+            entailment_loss_list = []
+            bind_to_idx = None
+            if self.bind_to is not None:
+                if self.bind_to == "image":
+                    bind_to_idx = 0
+                elif self.bind_to == "dna":
+                    bind_to_idx = 1
+                elif self.bind_to == "text":
+                    bind_to_idx = 2
+
             for idx_a, (feature_a, input_feature_a) in enumerate(zip(feature_list, input_features)):
                 for idx_b, (feature_b, input_feature_b) in enumerate(zip(feature_list, input_features)):
                     if bind_to_idx is not None:
