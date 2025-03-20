@@ -284,42 +284,43 @@ class ClipLoss_hyperbolic(nn.Module):
             elif self.bind_to == "text":
                 bind_to_idx = 2
 
-
-        for idx_a, (feature_a, input_feature_a) in enumerate(zip(feature_list, input_features)):
-            for idx_b, (feature_b, input_feature_b) in enumerate(zip(feature_list, input_features)):
-                if bind_to_idx is not None:
-                    if idx_a != bind_to_idx and idx_b != bind_to_idx:
+        # autocast to force a higher floating point precision.
+        with torch.autocast(self.device.type, dtype=torch.float32):
+            for idx_a, (feature_a, input_feature_a) in enumerate(zip(feature_list, input_features)):
+                for idx_b, (feature_b, input_feature_b) in enumerate(zip(feature_list, input_features)):
+                    if bind_to_idx is not None:
+                        if idx_a != bind_to_idx and idx_b != bind_to_idx:
+                            continue
+                    if idx_a == idx_b:
                         continue
-                if idx_a == idx_b:
-                    continue
 
-                if self.no_image_text_loss and (idx_a == 0 or idx_b == 0) and (idx_a == 2 or idx_b == 2):
-                    continue
-                # feature_a = F.normalize(feature_a, p=2, dim=1)
-                # feature_b = F.normalize(feature_b, p=2, dim=1)
+                    if self.no_image_text_loss and (idx_a == 0 or idx_b == 0) and (idx_a == 2 or idx_b == 2):
+                        continue
+                    # feature_a = F.normalize(feature_a, p=2, dim=1)
+                    # feature_b = F.normalize(feature_b, p=2, dim=1)
 
-                # sim_a_b = logit_scale * feature_a @ feature_b.T
-                # sim_b_a = logit_scale * feature_b @ feature_a.T
-                sim_a_b = -L.pairwise_dist(feature_a, feature_b, curv)
-                sim_b_a = -L.pairwise_dist(feature_b, feature_a, curv)
+                    # sim_a_b = logit_scale * feature_a @ feature_b.T
+                    # sim_b_a = logit_scale * feature_b @ feature_a.T
+                    sim_a_b = -L.pairwise_dist(feature_a, feature_b, curv)
+                    sim_b_a = -L.pairwise_dist(feature_b, feature_a, curv)
 
-                loss_a_b = self.criterion(logit_scale * sim_a_b, all_labels)
-                loss_b_a = self.criterion(logit_scale * sim_b_a, all_labels)
-                contrastive_loss_list.append(loss_a_b)
-                contrastive_loss_list.append(loss_b_a)
+                    loss_a_b = self.criterion(logit_scale * sim_a_b, all_labels)
+                    loss_b_a = self.criterion(logit_scale * sim_b_a, all_labels)
+                    contrastive_loss_list.append(loss_a_b)
+                    contrastive_loss_list.append(loss_b_a)
 
-                # TODO: make more robust
-                # Hyperbolic entailment loss: text should entail matching image.
-                if idx_a == 1 and idx_b == 0:
-                    _angle = L.oxy_angle(input_feature_a, input_feature_b, curv)
-                    _aperture = L.half_aperture(input_feature_a, curv, eps=1e-6)
-                    entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
-                    entailment_loss_list.append(entailment_loss)
-                elif idx_a == 0 and idx_b == 1:
-                    _angle = L.oxy_angle(input_feature_b, input_feature_a, curv)
-                    _aperture = L.half_aperture(input_feature_b, curv, eps=1e-6)
-                    entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
-                    entailment_loss_list.append(entailment_loss)
+                    # TODO: make more robust
+                    # Hyperbolic entailment loss: text should entail matching image.
+                    if idx_a == 1 and idx_b == 0:
+                        _angle = L.oxy_angle(input_feature_a, input_feature_b, curv)
+                        _aperture = L.half_aperture(input_feature_a, curv)
+                        entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
+                        entailment_loss_list.append(entailment_loss)
+                    elif idx_a == 0 and idx_b == 1:
+                        _angle = L.oxy_angle(input_feature_b, input_feature_a, curv)
+                        _aperture = L.half_aperture(input_feature_b, curv)
+                        entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
+                        entailment_loss_list.append(entailment_loss)
 
         contrastive_total_loss = sum(contrastive_loss_list) * 1.0 / len(contrastive_loss_list)
         entailment_total_loss = sum(entailment_loss_list) * 1.0 / len(entailment_loss_list)
