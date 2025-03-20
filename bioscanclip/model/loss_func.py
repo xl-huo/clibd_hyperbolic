@@ -300,8 +300,8 @@ class ClipLoss_hyperbolic(nn.Module):
 
                 # sim_a_b = logit_scale * feature_a @ feature_b.T
                 # sim_b_a = logit_scale * feature_b @ feature_a.T
-                sim_a_b = -L.pairwise_inner(feature_a, feature_b, curv)
-                sim_b_a = -L.pairwise_inner(feature_b, feature_a, curv)
+                sim_a_b = -L.pairwise_dist(feature_a, feature_b, curv)
+                sim_b_a = -L.pairwise_dist(feature_b, feature_a, curv)
 
                 loss_a_b = self.criterion(logit_scale * sim_a_b, all_labels)
                 loss_b_a = self.criterion(logit_scale * sim_b_a, all_labels)
