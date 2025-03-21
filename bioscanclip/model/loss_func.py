@@ -323,11 +323,11 @@ class ClipLoss_hyperbolic(nn.Module):
                         entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
                         entailment_loss_list.append(entailment_loss)
 
-        contrastive_total_loss = sum(contrastive_loss_list) * 1.0 / len(contrastive_loss_list)
-        entailment_total_loss = sum(entailment_loss_list) * 1.0 / len(entailment_loss_list)
+            contrastive_total_loss = sum(contrastive_loss_list) * 1.0 / len(contrastive_loss_list)
+            entailment_total_loss = sum(entailment_loss_list) * 1.0 / len(entailment_loss_list)
 
-        total_loss = contrastive_total_loss
-        if self.entail_weight > 0:
-            total_loss += self.entail_weight * entailment_total_loss
+            total_loss = contrastive_total_loss
+            if self.entail_weight > 0:
+                total_loss += self.entail_weight * entailment_total_loss
 
         return {"loss": total_loss, "contrastive_loss": contrastive_total_loss, "entailment_loss": entailment_total_loss}
