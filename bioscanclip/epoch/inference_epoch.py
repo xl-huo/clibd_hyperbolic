@@ -66,7 +66,7 @@ def get_feature_and_label(dataloader, model, device, for_open_clip=False, multi_
             if dna_output is not None:
                 encoded_dna_feature_list = encoded_dna_feature_list + F.normalize(dna_output, dim=-1).cpu().tolist()
             if language_output is not None:
-                encoded_text_feature_list = encoded_text_feature_list + F.normalize(language_input, dim=-1).cpu().tolist()
+                encoded_text_feature_list = encoded_text_feature_list + F.normalize(language_output, dim=-1).cpu().tolist()
 
             label_list = label_list + convert_label_dict_to_list_of_dict(label_batch)
             file_name_list = file_name_list + list(processid_batch)
