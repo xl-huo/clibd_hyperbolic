@@ -19,6 +19,7 @@ from PIL import Image
 import io
 # from huggingface_hub import hf_hub_download
 
+import bioscanclip.util.lorentz as L
 
 LEVELS = ["order", "family", "genus", "species"]
 All_TYPE_OF_FEATURES_OF_QUERY = [
@@ -493,14 +494,25 @@ def print_micro_and_macro_acc(acc_dict, k_list, args):
         OmegaConf.save(args, os.path.join(logs_folder, 'config.yaml'))
         print(f"Config saved to logs folder: {logs_folder}/config.json")
 
-def make_prediction(query_feature, keys_feature, keys_label, with_similarity=False, with_indices=False, max_k=5):
-    index = faiss.IndexFlatIP(keys_feature.shape[-1])
-    keys_feature = normalize(keys_feature, norm="l2", axis=1).astype(np.float32)
-    query_feature = normalize(query_feature, norm="l2", axis=1).astype(np.float32)
-    index.add(keys_feature)
-    pred_list = []
+def make_prediction(query_feature, keys_feature, keys_label, model=None, with_similarity=False, with_indices=False, max_k=5):
 
-    similarities, indices = index.search(query_feature, max_k)
+    from bioscanclip.model.simple_clip import SimpleCLIP_hyperbolic
+    if isinstance(model, SimpleCLIP_hyperbolic):
+        with torch.no_grad():
+            scores = L.pairwise_inner(
+                torch.from_numpy(query_feature).to(model.device), 
+                torch.from_numpy(keys_feature).to(model.device), 
+                model.curv.exp())  # shape: [num_query, num_key]
+            similarities, indices = torch.topk(scores, k=max_k, dim=1, largest=True, sorted=True)
+        indices = indices.cpu().numpy()
+    else:
+        index = faiss.IndexFlatIP(keys_feature.shape[-1])
+        keys_feature = normalize(keys_feature, norm="l2", axis=1).astype(np.float32)
+        query_feature = normalize(query_feature, norm="l2", axis=1).astype(np.float32)
+        index.add(keys_feature)
+        similarities, indices = index.search(query_feature, max_k)
+
+    pred_list = []
     for key_indices in indices:
         k_pred_in_diff_level = {}
         for level in LEVELS:
@@ -572,7 +584,7 @@ def top_k_macro_accuracy(pred_list, gt_list, k_list=None):
 
     return macro_acc_dict, per_class_acc
 
-def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, small_species_list=None, k_list=None):
+def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, model=None, small_species_list=None, k_list=None):
     acc_dict = {}
     per_class_acc = {}
     if k_list is None:
@@ -631,10 +643,10 @@ def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, small_sp
                 continue
 
             curr_seen_pred_list = make_prediction(
-                curr_seen_feature, curr_keys_feature, keys_label, with_similarity=False, max_k=max_k
+                curr_seen_feature, curr_keys_feature, keys_label, model=model, max_k=max_k
             )
             curr_unseen_pred_list = make_prediction(
-                curr_unseen_feature, curr_keys_feature, keys_label, max_k=max_k
+                curr_unseen_feature, curr_keys_feature, keys_label, model=model, max_k=max_k
             )
 
             pred_dict[query_feature_type][key_feature_type] = {

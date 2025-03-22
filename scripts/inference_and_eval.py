@@ -682,6 +682,7 @@ def main(args: DictConfig) -> None:
         seen_dict,
         unseen_dict,
         args,
+        model=model,
         small_species_list=None,
         k_list=args.inference_and_eval_setting.k_list,
     )

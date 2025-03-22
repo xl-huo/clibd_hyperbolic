@@ -19,8 +19,9 @@ hyperbolic_space:
   entail_weight: 0.2
 
 model_output_name: image_text_hyperbolic_4gpu_ep50
+model_output_dir: ${project_root_path}/ckpt/bioscan_hyperbolic
 evaluation_period: 1
-ckpt_path: ${project_root_path}/ckpt/bioscan_clip/final_experiments/image_text_2gpu_50epoch/best.pth
+ckpt_path: ${project_root_path}/ckpt/bioscan_hyperbolic/image_text_hyperbolic_4gpu_ep50/2025-03-20_140628/best.pth
 output_dim: 768
 port: 29534
 

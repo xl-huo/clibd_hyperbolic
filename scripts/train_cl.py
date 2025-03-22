@@ -81,7 +81,7 @@ def eval_phase(model, device, all_keys_dataloader, seen_val_dataloader, unseen_v
         unseen_val_dataloader, model, device, for_open_clip=for_open_clip)
 
     acc_dict, _, pred_dict = inference_and_print_result(keys_dict, seen_val_dict, unseen_val_dict, args=args,
-                                                        small_species_list=None, k_list=k_list)
+                                                        model=model, small_species_list=None, k_list=k_list)
     return acc_dict, pred_dict
 
 
@@ -100,7 +100,7 @@ def eval_phase_for_insect(model, device, insect_train_dataloader_for_key, insect
     keys_dict = construct_key_dict([insect_train_dict, insect_val_dict, insect_test_seen_dict, insect_test_unseen_dict])
 
     acc_dict, _, pred_dict = inference_and_print_result(keys_dict, insect_test_seen_dict, insect_test_unseen_dict,
-                                                        args=args,
+                                                        args=args, model=model,
                                                         small_species_list=None, k_list=k_list)
 
     return acc_dict, pred_dict

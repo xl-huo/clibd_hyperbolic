@@ -14,7 +14,7 @@ language:
 
 model_output_name: image_text_4gpu_ep50
 evaluation_period: 1
-ckpt_path: ${project_root_path}/ckpt/bioscan_clip/final_experiments/image_text_2gpu_50epoch/best.pth
+ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_text_4gpu_ep50/2025-03-19_023735/last.pth
 output_dim: 768
 port: 29533
 
