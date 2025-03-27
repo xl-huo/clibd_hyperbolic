@@ -321,7 +321,7 @@ class ClipLoss_hyperbolic(nn.Module):
                     contrastive_loss_list.append(loss_b_a)
 
                     # TODO: make more robust
-                    if len(input_feature_a.shape) == 2: # image and text
+                    if len(feature_list) == 2: # image and text
                     # Hyperbolic entailment loss: text should entail matching image.
                         if idx_a == 1 and idx_b == 0:
                             entailment_loss_list.append(
