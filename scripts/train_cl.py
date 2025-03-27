@@ -296,6 +296,10 @@ def main_process(rank: int, world_size: int, args):
     OmegaConf.save(args, os.path.join(folder_path, 'config.yaml'))
 
     for epoch in range(args.model_config.epochs):
+        
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
+
         dist.broadcast(stop_flag, src=0)
         if stop_flag.item() == 1:
             print(f"Process {rank} stopping at epoch {epoch} due to early stopping")
