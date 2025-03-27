@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch
 
 
+
 def convert_label_dict_to_list_of_dict(label_batch):
     order = label_batch['order']
 
@@ -47,6 +48,9 @@ def get_feature_and_label(dataloader, model, device, for_open_clip=False, multi_
     file_name_list =[]
     pbar = tqdm(enumerate(dataloader), total=len(dataloader))
     model.eval()
+
+    from bioscanclip.model.simple_clip import SimpleCLIP_hyperbolic
+
     with torch.no_grad():
         for step, batch in pbar:
             pbar.set_description(f"Encoding features")
@@ -62,11 +66,20 @@ def get_feature_and_label(dataloader, model, device, for_open_clip=False, multi_
                                                                                        dna_input_batch.to(device),
                                                                                        language_input)
             if image_output is not None:
-                encoded_image_feature_list = encoded_image_feature_list + F.normalize(image_output, dim=-1).cpu().tolist()
+                if isinstance(model, SimpleCLIP_hyperbolic):
+                    encoded_image_feature_list = encoded_image_feature_list + image_output.cpu().tolist()
+                else:
+                    encoded_image_feature_list = encoded_image_feature_list + F.normalize(image_output, dim=-1).cpu().tolist()
             if dna_output is not None:
-                encoded_dna_feature_list = encoded_dna_feature_list + F.normalize(dna_output, dim=-1).cpu().tolist()
+                if isinstance(model, SimpleCLIP_hyperbolic):
+                    encoded_dna_feature_list = encoded_dna_feature_list + dna_output.cpu().tolist()
+                else:
+                    encoded_dna_feature_list = encoded_dna_feature_list + F.normalize(dna_output, dim=-1).cpu().tolist()
             if language_output is not None:
-                encoded_text_feature_list = encoded_text_feature_list + F.normalize(language_output, dim=-1).cpu().tolist()
+                if isinstance(model, SimpleCLIP_hyperbolic):
+                    encoded_text_feature_list = encoded_text_feature_list + language_output.cpu().tolist()
+                else:
+                    encoded_text_feature_list = encoded_text_feature_list + F.normalize(language_output, dim=-1).cpu().tolist()
 
             label_list = label_list + convert_label_dict_to_list_of_dict(label_batch)
             file_name_list = file_name_list + list(processid_batch)

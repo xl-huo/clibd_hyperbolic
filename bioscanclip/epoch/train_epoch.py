@@ -10,7 +10,7 @@ def train_epoch(activate_wandb, total_epochs, epoch, dataloader, model, optimize
                 for_open_clip=False, rank=None, fix_temperature=None, enable_autocast=False, train_hyperbolic=False):
     torch.autograd.set_detect_anomaly(True)
     if rank == 0:
-        pbar = tqdm(enumerate(dataloader), total=len(dataloader))
+        pbar = tqdm(enumerate(dataloader), total=len(dataloader), leave=False)
     else:
         pbar = enumerate(dataloader)
     epoch_loss = 0.0

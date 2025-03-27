@@ -1,5 +1,5 @@
 batch_size: 500
-epochs: 50
+epochs: 30
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-hyperbolic_experiments
 using_train_seen_for_pre_train: true
@@ -8,6 +8,9 @@ dataset: bioscan_1m
 image:
   input_type: image
   model: lora_vit
+dna:
+  input_type: sequence
+  model: lora_barcode_bert
 language:
   input_type: sequence
   model: lora_bert
@@ -20,12 +23,12 @@ hyperbolic_space:
 
   loss_type: 'A'
 
-model_output_name: image_text_hyperbolic_4gpu_ep50
+model_output_name: image_dna_text_hyperbolic_A_2gpu_ep30
 model_output_dir: ${project_root_path}/ckpt/bioscan_hyperbolic
 evaluation_period: 1
-ckpt_path: ${project_root_path}/ckpt/bioscan_hyperbolic/image_text_hyperbolic_4gpu_ep50/2025-03-20_140628/best.pth
+ckpt_path: ${project_root_path}/ckpt/bioscan_hyperbolic/image_dna_text_hyperbolic_2gpu_ep30/2025-03-20_140628/best.pth
 output_dim: 768
-port: 29534
+port: 29535
 
 disable_lora: true
 lr_scheduler: one_cycle

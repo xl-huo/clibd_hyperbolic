@@ -20,9 +20,8 @@ from bioscanclip.epoch.train_epoch import train_epoch
 from inference_and_eval import get_features_and_label, inference_and_print_result
 from bioscanclip.model.loss_func import ContrastiveLoss, ClipLoss, ClipLoss_hyperbolic
 from bioscanclip.model.simple_clip import load_clip_model
-from bioscanclip.util.util import set_seed
+from bioscanclip.util.util import set_seed, scale_learning_rate, print_micro_and_macro_acc
 from bioscanclip.util.dataset import load_dataloader, load_insect_dataloader
-from bioscanclip.util.util import scale_learning_rate
 
 
 def print_when_rank_zero(message, rank=0):
@@ -69,7 +68,7 @@ def construct_key_dict(list_of_dict):
     return key_dict
 
 
-def eval_phase(model, device, all_keys_dataloader, seen_val_dataloader, unseen_val_dataloader, k_list, args,
+def eval_phase(model, device, all_keys_dataloader, seen_val_dataloader, unseen_val_dataloader, k_list, args, epoch,
                species_to_drop=None, rank=None, for_open_clip=False):
     keys_dict = get_features_and_label(
         all_keys_dataloader, model, device, for_key_set=True, for_open_clip=for_open_clip)
@@ -80,7 +79,7 @@ def eval_phase(model, device, all_keys_dataloader, seen_val_dataloader, unseen_v
     unseen_val_dict = get_features_and_label(
         unseen_val_dataloader, model, device, for_open_clip=for_open_clip)
 
-    acc_dict, _, pred_dict = inference_and_print_result(keys_dict, seen_val_dict, unseen_val_dict, args=args,
+    acc_dict, _, pred_dict = inference_and_print_result(keys_dict, seen_val_dict, unseen_val_dict, args=args, epoch=epoch,
                                                         model=model, small_species_list=None, k_list=k_list)
     return acc_dict, pred_dict
 
@@ -200,6 +199,10 @@ def main_process(rank: int, world_size: int, args):
         entail_weight = 0.2
         if hasattr(args.model_config.hyperbolic_space, 'entail_weight'):
             entail_weight = args.model_config.hyperbolic_space.entail_weight
+        
+        loss_type = None
+        if hasattr(args.model_config.hyperbolic_space, 'loss_type'):
+            loss_type = args.model_config.hyperbolic_space.loss_type
 
     scaler = GradScaler(enabled=enable_amp)
 
@@ -267,7 +270,7 @@ def main_process(rank: int, world_size: int, args):
             criterion = ClipLoss_hyperbolic(local_loss=args.model_config.loss_setup.local_loss,
                                 gather_with_grad=args.model_config.loss_setup.gather_with_grad, rank=rank,
                                 world_size=world_size, use_horovod=args.model_config.loss_setup.use_horovod,
-                                criterion=nn.CrossEntropyLoss(), bind_to=bind_to, 
+                                criterion=nn.CrossEntropyLoss(), bind_to=bind_to, loss_type=loss_type,
                                 no_image_text_loss=no_image_text_loss, entail_weight=entail_weight)
         else:
             criterion = ClipLoss(local_loss=args.model_config.loss_setup.local_loss,
@@ -285,7 +288,7 @@ def main_process(rank: int, world_size: int, args):
     k_list = [1, 3, 5]
 
     best_epoch = None
-    best_overall_acc = None
+    best_overall_acc = None; best_acc_dict = None
     folder_path = os.path.join(args.project_root_path, args.model_output_dir,
                                args.model_config.model_output_name, formatted_datetime)
     os.makedirs(folder_path, exist_ok=True)
@@ -314,10 +317,10 @@ def main_process(rank: int, world_size: int, args):
             if hasattr(args.model_config, 'dataset') and args.model_config.dataset == "INSECT":
                 acc_dict, pred_dict = eval_phase(original_model, rank, insect_train_dataloader_for_key,
                                                  insect_test_seen_dataloader, insect_test_unseen_dataloader, k_list,
-                                                 args=args, for_open_clip=for_open_clip, rank=rank)
+                                                 args=args, epoch=epoch, for_open_clip=for_open_clip, rank=rank)
             else:
                 acc_dict, pred_dict = eval_phase(original_model, rank, all_keys_dataloader, seen_val_dataloader,
-                                                 unseen_val_dataloader, k_list, rank=rank, args=args,
+                                                 unseen_val_dataloader, k_list, rank=rank, args=args, epoch=epoch,
                                                  for_open_clip=for_open_clip)
 
             dict_for_wandb = convert_acc_dict_to_wandb_dict(acc_dict)
@@ -328,6 +331,7 @@ def main_process(rank: int, world_size: int, args):
             if best_overall_acc is None or best_overall_acc < overall_acc:
                 best_epoch = epoch
                 best_overall_acc = overall_acc
+                best_acc_dict = acc_dict
                 if args.save_ckpt:
                     best_ckpt_path = os.path.join(folder_path, f'best.pth')
 
@@ -338,13 +342,27 @@ def main_process(rank: int, world_size: int, args):
                     stop_flag[0] = 1
             dict_for_wandb["overall_acc"] = overall_acc
             dict_for_wandb["best_epoch"] = best_epoch
+            dict_for_wandb["best_overall_acc"] = best_overall_acc
             if args.activate_wandb and rank == 0:
                 wandb.log(dict_for_wandb,
                           commit=True)
         dist.broadcast(stop_flag, src=0)
         if stop_flag.item() == 1:
+
+            if args.activate_wandb and rank == 0:
+                print("Finish training")
+                print("Best epoch: ", best_epoch)
+                print_micro_and_macro_acc(best_acc_dict, [1,3,5], args, best_epoch)
+
             print(f"Process {rank} stopping at epoch {epoch} due to early stopping")
             break
+
+    if args.activate_wandb and rank == 0:
+        print("Finish training")
+        print("............................................")
+        print("Best epoch: ", best_epoch)
+        print_micro_and_macro_acc(best_acc_dict, [1,3,5], args, best_epoch)
+    
 
 @hydra.main(config_path="../bioscanclip/config", config_name="global_config", version_base="1.1")
 def main(args: DictConfig) -> None:

@@ -552,6 +552,20 @@ def main(args: DictConfig) -> None:
         folder_for_saving, f"extracted_feature_from_{args.inference_and_eval_setting.eval_on}_split.hdf5"
     )
 
+    # initialize model
+    print("Initialize model...")
+
+    model = load_clip_model(args, device)
+
+    if hasattr(args.model_config, "load_ckpt") and args.model_config.load_ckpt is False:
+        pass
+    else:
+        checkpoint = torch.load(args.model_config.ckpt_path, map_location="cuda:0")
+        print(f"Loading model from {args.model_config.ckpt_path}")
+        print()
+
+        model.load_state_dict(checkpoint)
+
     if os.path.exists(extracted_features_path) and os.path.exists(labels_path) and os.path.exists(processed_id_path) and args.load_inference:
         print("Loading embeddings from file...")
 
@@ -588,20 +602,6 @@ def main(args: DictConfig) -> None:
         print(f"Done loading embeddings from ‘{extracted_features_path}’")
 
     else:
-        # initialize model
-        print("Initialize model...")
-
-        model = load_clip_model(args, device)
-
-        if hasattr(args.model_config, "load_ckpt") and args.model_config.load_ckpt is False:
-            pass
-        else:
-            checkpoint = torch.load(args.model_config.ckpt_path, map_location="cuda:0")
-            print(f"Loading model from {args.model_config.ckpt_path}")
-            print()
-
-            model.load_state_dict(checkpoint)
-
         # Load data
         # args.model_config.batch_size = 24
 

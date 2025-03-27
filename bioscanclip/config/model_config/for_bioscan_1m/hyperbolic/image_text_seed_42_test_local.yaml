@@ -1,5 +1,5 @@
 batch_size: 25
-epochs: 30
+epochs: 2
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-hyperbolic_experiments
 using_train_seen_for_pre_train: true
@@ -34,6 +34,6 @@ amp: true
 
 random_seed: false
 
-eval_skip_epoch: 23
+eval_skip_epoch: -1
 
 default_seed: 42

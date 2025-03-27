@@ -217,6 +217,7 @@ class ClipLoss_hyperbolic(nn.Module):
             bind_to=None,
             no_image_text_loss=False,
             entail_weight=0.2,
+            loss_type=None,
     ):
         super().__init__()
         self.local_loss = local_loss
@@ -233,6 +234,15 @@ class ClipLoss_hyperbolic(nn.Module):
         self.no_image_text_loss = no_image_text_loss
 
         self.entail_weight = entail_weight
+        self.loss_type = loss_type
+
+    def compute_entailment_loss(self, input_feature_a, input_feature_b, curv, exp=1e-6):
+        _angle = L.oxy_angle(input_feature_a, input_feature_b, curv)
+        _aperture = L.half_aperture(input_feature_a, curv, eps=exp)
+        entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
+
+        return entailment_loss
+
 
     def forward(self, image_features, dna_features, text_features, labels, logit_scale, curv):
         device = image_features.device
@@ -311,17 +321,44 @@ class ClipLoss_hyperbolic(nn.Module):
                     contrastive_loss_list.append(loss_b_a)
 
                     # TODO: make more robust
+                    if len(input_feature_a.shape) == 2: # image and text
                     # Hyperbolic entailment loss: text should entail matching image.
-                    if idx_a == 1 and idx_b == 0:
-                        _angle = L.oxy_angle(input_feature_a, input_feature_b, curv)
-                        _aperture = L.half_aperture(input_feature_a, curv, eps=1e-6)
-                        entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
-                        entailment_loss_list.append(entailment_loss)
-                    elif idx_a == 0 and idx_b == 1:
-                        _angle = L.oxy_angle(input_feature_b, input_feature_a, curv)
-                        _aperture = L.half_aperture(input_feature_b, curv, eps=1e-6)
-                        entailment_loss = torch.clamp(_angle - _aperture, min=0).mean()
-                        entailment_loss_list.append(entailment_loss)
+                        if idx_a == 1 and idx_b == 0:
+                            entailment_loss_list.append(
+                                self.compute_entailment_loss(input_feature_a, input_feature_b, curv, exp=1e-6)
+                            )
+                        elif idx_a == 0 and idx_b == 1:
+                            entailment_loss_list.append(
+                                self.compute_entailment_loss(input_feature_b, input_feature_a, curv, exp=1e-6)
+                            )
+                    else: # image, dna, text
+                        if self.loss_type == 'A': # T->I + T->D
+                            if idx_a == 2 and (idx_b == 0 or idx_b == 1): # a is text
+                                entailment_loss_list.append(
+                                    self.compute_entailment_loss(input_feature_a, input_feature_b, curv, exp=1e-6)
+                                )
+                            elif idx_b == 2 and (idx_a == 0 or idx_a == 1): # b is text
+                                entailment_loss_list.append(
+                                    self.compute_entailment_loss(input_feature_b, input_feature_a, curv, exp=1e-6)
+                                )
+                        elif self.loss_type == 'B': # T->D->I
+                            if (idx_a == 1 and idx_b == 0) or (idx_a==2 and idx_b==1):
+                                entailment_loss_list.append(
+                                    self.compute_entailment_loss(input_feature_a, input_feature_b, curv, exp=1e-6)
+                                )
+                            elif (idx_b == 1 and idx_a == 0) or (idx_b==2 and idx_a==1):
+                                entailment_loss_list.append(
+                                    self.compute_entailment_loss(input_feature_b, input_feature_a, curv, exp=1e-6)
+                                )
+                        elif self.loss_type == 'C': # T->I->D + T->I
+                            if (idx_a == 1 and idx_b == 0) or (idx_a==2 and idx_b==1) or (idx_a==2 and idx_b==0):
+                                entailment_loss_list.append(
+                                    self.compute_entailment_loss(input_feature_a, input_feature_b, curv, exp=1e-6)
+                                )
+                            elif (idx_b == 1 and idx_a == 0) or (idx_b==2 and idx_a==1) or (idx_b==2 and idx_a==0):
+                                entailment_loss_list.append(
+                                    self.compute_entailment_loss(input_feature_b, input_feature_a, curv, exp=1e-6)
+                                )
 
             contrastive_total_loss = sum(contrastive_loss_list) * 1.0 / len(contrastive_loss_list)
             entailment_total_loss = sum(entailment_loss_list) * 1.0 / len(entailment_loss_list)

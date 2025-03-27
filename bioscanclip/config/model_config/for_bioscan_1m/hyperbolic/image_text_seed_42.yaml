@@ -1,5 +1,5 @@
 batch_size: 500
-epochs: 50
+epochs: 30
 labels_for_driven_positive_and_negative_pairs:
 wandb_project_name: BIOSCAN-CLIP-hyperbolic_experiments
 using_train_seen_for_pre_train: true
@@ -14,7 +14,7 @@ language:
 
 model_output_name: image_text_4gpu_ep50
 evaluation_period: 1
-ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_text_4gpu_ep50/2025-03-19_023735/last.pth
+ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_text_4gpu_ep50/2025-03-19_023735/best.pth
 output_dim: 768
 port: 29533
 

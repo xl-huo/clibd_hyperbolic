@@ -372,7 +372,7 @@ def top_k_micro_accuracy(pred_list, gt_list, k_list=None):
 
     return k_micro_acc
 
-def print_micro_and_macro_acc(acc_dict, k_list, args):
+def print_micro_and_macro_acc(acc_dict, k_list, args, epoch):
     header = [
         " ",
         "Seen Order",
@@ -459,9 +459,11 @@ def print_micro_and_macro_acc(acc_dict, k_list, args):
                     rows.append(curr_row)
                     rows_for_copy_to_google_doc.append(row_for_copy_to_google_doc)
                     csv_data.append(row_for_csv)
+    print(f"Epoch: {epoch}")
     table = Table(header, rows)
     table.print_table()
 
+    print(f"Epoch: {epoch}")
     print("For copy to google doc")
     for row in rows_for_copy_to_google_doc:
         print(row)
@@ -584,7 +586,7 @@ def top_k_macro_accuracy(pred_list, gt_list, k_list=None):
 
     return macro_acc_dict, per_class_acc
 
-def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, model=None, small_species_list=None, k_list=None):
+def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, epoch, model=None, small_species_list=None, k_list=None):
     acc_dict = {}
     per_class_acc = {}
     if k_list is None:
@@ -677,7 +679,7 @@ def inference_and_print_result(keys_dict, seen_dict, unseen_dict, args, model=No
             acc_dict[query_feature_type][key_feature_type]["seen"]["macro_acc"] = seen_macro_acc
             acc_dict[query_feature_type][key_feature_type]["unseen"]["macro_acc"] = unseen_macro_acc
 
-    print_micro_and_macro_acc(acc_dict, k_list, args)
+    print_micro_and_macro_acc(acc_dict, k_list, args, epoch)
 
     return acc_dict, per_class_acc, pred_dict
 
