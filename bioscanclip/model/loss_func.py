@@ -280,14 +280,21 @@ class ClipLoss_hyperbolic(nn.Module):
                         
             input_features = [image_features, dna_features, text_features]
             input_features = [item for item in input_features if item is not None]
+
+            # print mean
+            # print("mean image features: ", all_image_features.mean(), all_image_features.std())
+            # print("mean dna features: ", all_dna_features.mean(), all_dna_features.std())
+            # print("mean text features: ", all_text_features.mean(), all_text_features.std())
+
             feature_list = [all_image_features, all_dna_features, all_text_features]
             feature_list = [item for item in feature_list if item is not None]
 
             if len(feature_list) < 2:
                 raise ValueError("Too less element for calculating the contrastive loss.")
 
-            contrastive_loss_list = []
-            entailment_loss_list = []
+            contrastive_loss_list = []; entailment_loss_list = []
+            # contrastive_loss_I_T = []; contrastive_loss_I_D = []; contrastive_loss_D_T = []
+
             bind_to_idx = None
             if self.bind_to is not None:
                 if self.bind_to == "image":
@@ -317,6 +324,14 @@ class ClipLoss_hyperbolic(nn.Module):
 
                     loss_a_b = self.criterion(logit_scale * sim_a_b, all_labels)
                     loss_b_a = self.criterion(logit_scale * sim_b_a, all_labels)
+
+                    # if (idx_a == 0 and idx_b == 1) or (idx_a == 1 and idx_b == 0):
+                    #     contrastive_loss_I_D.append(self.criterion(logit_scale * sim_a_b, all_labels))
+                    # elif (idx_a == 0 and idx_b == 2) or (idx_a == 2 and idx_b == 0):
+                    #     contrastive_loss_I_T.append(self.criterion(logit_scale * sim_a_b, all_labels))
+                    # elif (idx_a == 1 and idx_b == 2) or (idx_a == 2 and idx_b == 1):
+                    #     contrastive_loss_D_T.append(self.criterion(logit_scale * sim_a_b, all_labels))
+
                     contrastive_loss_list.append(loss_a_b)
                     contrastive_loss_list.append(loss_b_a)
 

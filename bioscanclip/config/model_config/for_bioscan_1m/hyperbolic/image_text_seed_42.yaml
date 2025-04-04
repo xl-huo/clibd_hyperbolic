@@ -12,7 +12,7 @@ language:
   input_type: sequence
   model: lora_bert
 
-model_output_name: image_text_4gpu_ep50
+model_output_name: image_text_2gpu_ep30
 evaluation_period: 1
 ckpt_path: ${project_root_path}/ckpt/bioscan_clip/image_text_4gpu_ep50/2025-03-19_023735/best.pth
 output_dim: 768
